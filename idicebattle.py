@@ -1,6 +1,6 @@
 #cog.name inspired by Hitsumo
-#Idée développée par Aza' & Hitsumo
-#cog codé par Aza'
+#Idea developped by Aza' & Hitsumo
+#cog coding par Aza'
 import discord
 from discord.ext import commands
 from random import randint
@@ -23,63 +23,63 @@ class NotRegistered(IDiceError):
 class IDiceBattle:
     def __init__(self, bot):
         self.bot = bot
-        self.file_path = "data/iDice/attributs.json"
+        self.file_path = "data/iDice/profile.json"
         self.idice = dataIO.load_json(self.file_path)
 
-    def create_attributs(self, user):
-        if not self.attributs_exists(user):
-            attributs = {"lvl": 1,
+    def create_profile(self, user):
+        if not self.profile_exists(user):
+            profile = {"lvl": 1,
                          "exp" : 0,
-                         "supps" : 0
+                         "bonus" : 0
                          }
-            self.idice[user.id] = attributs
-            self._save_attributs()
+            self.idice[user.id] = profile
+            self._save_profile()
         else:
             raise AlreadyRegistered()
 
-    def attributs_exists(self, user):
+    def profile_exists(self, user):
         try:
-            self._get_attributs(user)
+            self._get_profile(user)
         except NotRegistered:
             return False
         return True
 
     def get_lvl(self, user):
-        attributs = self._get_attributs(user)
-        return attributs["lvl"]
+        profile = self._get_profile(user)
+        return profile["lvl"]
 
     def get_exp(self, user):
-        attributs = self._get_attributs(user)
-        return attributs["exp"]
+        profile = self._get_profile(user)
+        return profile["exp"]
 
     def exp_up(self, user):
-        attributs = self._get_attributs(user)
-        exp = attributs["exp"]
-        lvl = attributs["lvl"]
+        profile = self._get_profile(user)
+        exp = profile["exp"]
+        lvl = profile["lvl"]
         possible_futur_exp = (exp + 1)
         if possible_futur_exp > (10*lvl):
             self.lvl_up(user)
         else:
-            attributs["exp"] += 1
-            self.idice[user.id] = attributs
-            self._save_attributs()
+            profile["exp"] += 1
+            self.idice[user.id] = profile
+            self._save_profile()
 
-    def get_supps(self, user):
-        attributs = self._get_attributs(user)
-        return attributs["supps"]
+    def get_bonus(self, user):
+        profile = self._get_profile(user)
+        return profile["bonus"]
 
     def lvl_up(self, user):
-        attributs = self._get_attributs(user)
-        attributs["lvl"] += 1
-        attributs["exp"] = 0
-        attributs["supps"] += 1
-        self.idice[user.id] = attributs
-        self._save_attributs()
+        profile = self._get_profile(user)
+        profile["lvl"] += 1
+        profile["exp"] = 0
+        profile["bonus"] += 1
+        self.idice[user.id] = profile
+        self._save_profile()
 
-    def _save_attributs(self):
-        dataIO.save_json("data/iDice/attributs.json", self.idice)
+    def _save_profile(self):
+        dataIO.save_json("data/iDice/profile.json", self.idice)
 
-    def _get_attributs(self, user):
+    def _get_profile(self, user):
         try:
             return deepcopy(self.idice[user.id])
         except KeyError:
@@ -93,183 +93,183 @@ class IDiceBattle:
 
     @_idice.command(pass_context=True)
     async def register(self, ctx):
-        """Pour enregistrer votre compte iDice."""
+        """To create and iDice Profile."""
         author = ctx.message.author
         try:
-            account = self.create_attributs(author)
-            await self.bot.say("{} : Profile iDice créé :white_check_mark: !".format(author.mention))
+            account = self.create_profile(author)
+            await self.bot.say("{}: iDice profile created :white_check_mark:!".format(author.mention))
         except AlreadyRegistered:
-            await self.bot.say("{}, tu as déjà un profile iDice.".format(author.mention))
+            await self.bot.say("{}, you already have an iDice profile.".format(author.mention))
 
     @_idice.command(pass_context=True)
     async def profile(self, ctx, user : discord.Member = None):
-        """Pour savoir votre profile iDice. (indisponible actuellement)"""
+        """To see your (or someone else) iDice profile."""
         author = ctx.message.author
         if user!=None:
             author = user
         data = discord.Embed(description="iDice Profile", color=author.color)
         data.set_author(name=author.display_name, icon_url=author.avatar_url)
-        data.add_field(name="Niveau 🏆", value= self.get_lvl(author))
-        data.add_field(name="Expérience ⭐", value=self.get_exp(author))
-        data.add_field(name="Bonus", value=self.get_supps(author), inline=False)
+        data.add_field(name="Level 🏆", value= self.get_lvl(author))
+        data.add_field(name="Experience ⭐", value=self.get_exp(author))
+        data.add_field(name="Bonus", value=self.get_bonus(author), inline=False)
         await self.bot.delete_message(ctx.message)
         await self.bot.say(embed=data)
 
     @_idice.command(pass_context=True)
     async def duel(self, ctx, user : discord.Member, amount : int):
-        """Pour lancer un duel iDice."""
+        """To start an iDice duel."""
         author = ctx.message.author
         server = ctx.message.server
         bank = self.bot.get_cog("Economy").bank
 
-        #Anti auto-duel
+        #No auto-duel
         if author == user:
-            await self.bot.say("{} : Vous ne pouvez pas vous affronter vous même.".format(author.mention))
+            await self.bot.say("{} : You can't duel yourself.".format(author.mention))
         else:
-            #Check bank.account_exists (positif)
-            if bank.account_exists(user) and bank.account_exists(author):
+            #Check bank.account_exists (positive response)
+            if bank.account_exists(user) and bank.account_exists(author):#Raw retrieving data because of some bugs in the past (have to be retry)
                 bankauthor = dataIO.load_json("data/economy/bank.json")[server.id][author.id]["balance"]
                 bankuser = dataIO.load_json("data/economy/bank.json")[server.id][user.id]["balance"]
                 #Check account != 0
                 if bankauthor == 0 or bankuser == 0:
                     await self.bot.delete_message(ctx.message)
-                    await self.bot.say("{} : Toi ou l'autre participant, n'as rien dans son compte en banque.\n"
-                                       "Impossible de faire un iDice duel.".format(author.mention))
+                    await self.bot.say("{}: You or your opponent, has nothing in the bank account.\n"
+                                       "Unable to proceed to an iDice duel.".format(author.mention))
                 else:
-                    #Check account suffisant
+                    #Check bank.account >= amount
                     if bankauthor < amount or bankuser < amount:
                         await self.bot.delete_message(ctx.message)
-                        await self.bot.say("{} : Toi ou l'autre participant, n'as pas assez dans son compte en banque.\n"
-                                           "Impossible de faire un iDice duel.".format(author.mention))
+                        await self.bot.say("{}: You or your opponent, don't have enough in his bank account.\n"
+                                           "Unable to proceed to an iDice duel.".format(author.mention))
                     else:
-                        #Check iDice Profile existant (positif)
-                        if self.attributs_exists(user) and self.attributs_exists(author):
-                            #Début w/ Réa
+                        #Check iDice Profile exists (positive response)
+                        if self.profile_exists(user) and self.profile_exists(author):
+                            #Start w/ wait_for_reaction
                             await self.bot.delete_message(ctx.message)
-                            msg1 = await self.bot.say("{}, voulez vous affronter {} en iDice duel, pour la somme de {} crédits ?"
+                            msg1 = await self.bot.say("{}, do you want to confront {} in an iDice duel, for an amount of {}?"
                             "".format(user.mention, author.mention, amount))
                             await self.bot.add_reaction(msg1, '\U00002705')
                             await self.bot.add_reaction(msg1, '\U0000274e')
                             rea = await self.bot.wait_for_reaction(['\U00002705', '\U0000274e'], user=user, timeout=30, message=msg1)
-                            #Pas de réponses
+                            #No response
                             if rea == None:
                                 await self.bot.delete_message(msg1)
-                                await self.bot.say("{} : Ton adversaire n'as pas répondu à la demande de iDice duel.".format(author.mention))
-                            #Réponse positive (Réaction prise en compte, mais ne continue pas.)
+                                await self.bot.say("{}: Your opponent didn't reply.".format(author.mention))
+                            #Positive response
                             elif rea.reaction.emoji == '\U00002705':
                                 msg = ""
-                                gagnant = ""
-                                perdant = ""
-                                échec_crit = "<:roll_echec_crit:367296625799856128> "
-                                échec = "<:roll_echec:367296637825056779> "
+                                winner = ""
+                                loser = ""
+                                crit_failure = "<:roll_echec_crit:367296625799856128> "
+                                failure = "<:roll_echec:367296637825056779> "
                                 normal = ":game_die: "
-                                réussite_crit = "<:roll_reussite:367296651058085888> "
-                                supps_author = self.get_supps(author) #Testez si la fonction marche
-                                supps_user = self.get_supps(user)
+                                crit_success = "<:roll_reussite:367296651058085888> "
+                                bonus_author = self.get_bonus(author)
+                                bonus_user = self.get_bonus(user)
                                 #Dice_Author
                                 n1_author = randint(1, 10)
-                                if n1_author == 10:#Réussite_crit
+                                if n1_author == 10:#Critical success
                                     n2_author = randint(1, 10)
                                     n_author = n1_author + n2_author
-                                    dice_author = réussite_crit
-                                    supps_author = supps_author + int((0.50*supps_author))
-                                    if supps_author != 0:
-                                        n_author = n_author + supps_author
-                                elif n1_author == 1:#Echec
+                                    dice_author = crit_success
+                                    bonus_author = bonus_author + int((0.50*bonus_author))
+                                    if bonus_author != 0:
+                                        n_author = n_author + bonus_author
+                                elif n1_author == 1:#Failure
                                     n2_author = randint(1, 10)
                                     n_author = n1_author + n2_author
-                                    if n2_author == 1:#Echec_crit
-                                        dice_author = échec_crit
-                                    else:#Echec (suite)
-                                        dice_author = échec
-                                        supps_author = supps_author - int((0.25*supps_author))
-                                    if supps_author != 0:
-                                        n_author = n_author + supps_author
-                                        supps_author = supps_author - int((0.50*supps_author))
+                                    if n2_author == 1:#Critical failure
+                                        dice_author = crit_failure
+                                    else:#Failure (following)
+                                        dice_author = failure
+                                        bonus_author = bonus_author - int((0.25*bonus_author))
+                                    if bonus_author != 0:
+                                        n_author = n_author + bonus_author
+                                        bonus_author = bonus_author - int((0.50*bonus_author))
                                 elif n1_author != 10 and n1_author != 1:#Normal
                                     dice_author = normal
                                     n_author = n1_author
-                                    if supps_author != 0:
-                                        n_author = n_author + supps_author
+                                    if bonus_author != 0:
+                                        n_author = n_author + bonus_author
                                 #Dice_User
                                 n1_user = randint(1, 10)
-                                if n1_user == 10:#Réussite_crit
+                                if n1_user == 10:#Critical success
                                     n2_user = randint(1, 10)
                                     n_user = n1_user + n2_user
-                                    dice_user = réussite_crit
-                                    supps_user = supps_user + int((0.50*supps_user))
-                                    if supps_user != 0:
-                                        n_user = n_user + supps_user
-                                elif n1_user == 1:#Echec
+                                    dice_user = crit_success
+                                    bonus_user = bonus_user + int((0.50*bonus_user))
+                                    if bonus_user != 0:
+                                        n_user = n_user + bonus_user
+                                elif n1_user == 1:#Failure
                                     n2_user = randint(1, 10)
                                     n_user = n1_user + n2_user
-                                    if n2_user == 1:#Echec_crit
-                                        dice_user = échec_crit
-                                    else:#Echec (suite)
-                                        dice_user = échec
-                                        supps_user = supps_user - int((0.25*supps_user))
-                                    if supps_user != 0:
-                                        n_user = n_user + supps_user
-                                        supps_user = supps_user - int((0.50*supps_user))
+                                    if n2_user == 1:#Critical failure
+                                        dice_user = crit_failure
+                                    else:#Failure (following)
+                                        dice_user = failure
+                                        bonus_user = bonus_user - int((0.25*bonus_user))
+                                    if bonus_user != 0:
+                                        n_user = n_user + bonus_user
+                                        bonus_user = bonus_user - int((0.50*bonus_user))
                                 elif n1_user != 10 and n1_user != 1:#Normal
                                     dice_user = normal
                                     n_user = n1_user
-                                    if supps_user != 0:
-                                        n_user = n_user + supps_user
-                                #Résultats
+                                    if bonus_user != 0:
+                                        n_user = n_user + bonus_user
+                                #Résults
                                 if n_author > n_user:
-                                    #gagnant
-                                    gagnant = author
-                                    n_gagnant = n_author
-                                    dice_gagnant = dice_author
-                                    #perdant
-                                    perdant = user
-                                    n_perdant = n_user
-                                    dice_perdant = dice_user
+                                    #Winner
+                                    winner = author
+                                    n_winner = n_author
+                                    dice_winner = dice_author
+                                    #Loser
+                                    loser = user
+                                    n_loser = n_user
+                                    dice_loser = dice_user
                                     #End
-                                    msg = "{} a gagné ! Et remporte donc la somme de {} crédits.".format(gagnant.mention, amount)
-                                    bank.transfer_credits(perdant, gagnant, amount)
-                                    self.exp_up(gagnant)
+                                    msg = "{} won ! And wins the amount of {}.".format(winner.mention, amount)
+                                    bank.transfer_credits(loser, winner, amount)
+                                    self.exp_up(winner)
                                 elif n_user > n_author:
-                                    #gagnant
-                                    gagnant = user
-                                    n_gagnant = n_user
-                                    dice_gagnant = dice_user
-                                    #perdant
-                                    perdant = author
-                                    n_perdant = n_author
-                                    dice_perdant = dice_author
+                                    #Winner
+                                    winner = user
+                                    n_winner = n_user
+                                    dice_winner = dice_user
+                                    #Loser
+                                    loser = author
+                                    n_loser = n_author
+                                    dice_loser = dice_author
                                     #End
-                                    msg = "{} a gagné ! Et remporte donc la somme de {} crédits.".format(gagnant.mention, amount)
-                                    bank.transfer_credits(perdant, gagnant, amount)
-                                    self.exp_up(gagnant)
-                                #Egalité
+                                    msg = "{} won ! And wins the amount of {}.".format(winner.mention, amount)
+                                    bank.transfer_credits(loser, winner, amount)
+                                    self.exp_up(winner)
+                                #Tie
                                 elif n_author == n_user:
-                                    gagnant = author
-                                    n_gagnant = n_author
-                                    dice_gagnant = dice_author
-                                    perdant = user
-                                    n_perdant = n_user
-                                    dice_perdant = dice_user
-                                    msg = "{} & {} : Egalité ! Personne ne gagne, personne ne perds.".format(author.mention, user.mention)
-                                #Affichage
+                                    winner = author
+                                    n_winner = n_author
+                                    dice_winner = dice_author
+                                    loser = user
+                                    n_loser = n_user
+                                    dice_loser = dice_user
+                                    msg = "{} & {} : Tie ! No one wins, no one loses.".format(author.mention, user.mention)
+                                #Viewing
                                 data = discord.Embed(description="iDice Duel :game_die: :crossed_swords:", color=author.color)
-                                data.add_field(name=gagnant.display_name, value="{} {} {}".format(dice_gagnant, n_gagnant, dice_gagnant))
-                                data.add_field(name=perdant.display_name, value="{} {} {}".format(dice_perdant, n_perdant, dice_perdant))
+                                data.add_field(name=winner.display_name, value="{} {} {}".format(dice_winner, n_winner, dice_winner))
+                                data.add_field(name=loser.display_name, value="{} {} {}".format(dice_loser, n_loser, dice_loser))
                                 await self.bot.delete_message(msg1)
                                 await self.bot.say(embed=data, content=msg)
-                                #Réponse négative
+                                #Negative response
                             elif rea.reaction.emoji == '\U0000274e':
                                 await self.bot.delete_message(msg1)
-                                await self.bot.say("{} : Dommage, mais ton adversaire n'as pas les couilles de t'affronter.".format(author.mention))
-                        else:#Check iDice Profile existant (négatif)
+                                await self.bot.say("{} : Your opponent have no balls to confront you.".format(author.mention))
+                        else:#Check iDice profile exists (Negative response)
                             await self.bot.delete_message(ctx.message)
-                            await self.bot.say("{} : Toi ou l'autre participant, n'as pas de profile iDice.\n"
-                                               "Impossible de faire un iDice duel : pensez à faire la commande `[p]idice register`.".format(author.mention))
-            else:#Check bank.account_exists (négatif)
+                            await self.bot.say("{} : You or your opponent, doesn't have an iDice profile.\n"
+                                               "Unable to proceed to an iDice duel: someone have to do `{}idice register`.".format(ctx.prefix, author.mention))
+            else:#Check bank.account_exists (Negative response)
                 await self.bot.delete_message(ctx.message)
-                await self.bot.say("{} : Toi ou l'autre participant, n'as pas de compte en banque.\n"
-                                   "Impossible de faire un iDice duel.".format(author.mention))
+                await self.bot.say("{}: You or your opponent, doesn't have a bank account.\n"
+                                   "Unable to proceed to an iDice duel.".format(author.mention))
 
 def check_folders():
     folders = ("data", "data/iDice/")
@@ -278,12 +278,12 @@ def check_folders():
             print("Creating " + folder + " folder...")
             os.makedirs(folder)
 
-def check_files():
-    if not os.path.isfile("data/iDice/attributs.json"):
-        print("Creating empty attributs.json...")
-        dataIO.save_json("data/iDice/attributs.json", {})
+def check_profile():
+    if not os.path.isfile("data/iDice/profile.json"):
+        print("Creating empty profile.json...")
+        dataIO.save_json("data/iDice/profile.json", {})
 
 def setup(bot):
     check_folders()
-    check_files()
+    check_profile()
     bot.add_cog(IDiceBattle(bot))
