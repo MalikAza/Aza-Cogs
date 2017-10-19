@@ -25,6 +25,10 @@ class IDiceBattle:
         self.bot = bot
         self.file_path = "data/iDice/profile.json"
         self.idice = dataIO.load_json(self.file_path)
+        self.crit_failure = "<:roll_echec_crit:367296625799856128> "
+        self.failure = "<:roll_echec:367296637825056779> "
+        self.normal = ":game_die: "
+        self.crit_success = "<:roll_reussite:367296651058085888> "
 
     def create_profile(self, user):
         if not self.profile_exists(user):
@@ -85,6 +89,107 @@ class IDiceBattle:
         except KeyError:
             raise NotRegistered()
 
+    def dice_author(self, author):
+        n1_author = randint(1, 10)
+        bonus_author = self.get_bonus(author)
+        if n1_author == 10:#Critical success
+            n2_author = randint(1, 10)
+            n_author = n1_author + n2_author
+            dice_author = self.crit_success
+            bonus_author = bonus_author + int((0.50*bonus_author))
+            if bonus_author != 0:
+                n_author = n_author + bonus_author
+        elif n1_author == 1:#Failure
+            n2_author = randint(1, 10)
+            n_author = n1_author + n2_author
+            if n2_author == 1:#Critical failure
+                dice_author = self.crit_failure
+            else:#Failure (following)
+                dice_author = self.failure
+                bonus_author = bonus_author - int((0.25*bonus_author))
+            if bonus_author != 0:
+                n_author = n_author + bonus_author
+                bonus_author = bonus_author - int((0.50*bonus_author))
+        elif n1_author != 10 and n1_author != 1:#Normal
+            dice_author = self.normal
+            n_author = n1_author
+            if bonus_author != 0:
+                n_author = n_author + bonus_author
+        dict_dice_author = {"dice_author" : dice_author, "n_author" : n_author}
+        return dict_dice_author
+
+    def dice_user(self, user):
+        n1_user = randint(1, 10)
+        bonus_user = self.get_bonus(user)
+        if n1_user == 10:#Critical success
+            n2_user = randint(1, 10)
+            n_user = n1_user + n2_user
+            dice_user = self.crit_success
+            bonus_user = bonus_user + int((0.50*bonus_user))
+            if bonus_user != 0:
+                n_user = n_user + bonus_user
+        elif n1_user == 1:#Failure
+            n2_user = randint(1, 10)
+            n_user = n1_user + n2_user
+            if n2_user == 1:#Critical failure
+                dice_user = self.crit_failure
+            else:#Failure (following)
+                dice_user = self.failure
+                bonus_user = bonus_user - int((0.25*bonus_user))
+            if bonus_user != 0:
+                n_user = n_user + bonus_user
+                bonus_user = bonus_user - int((0.50*bonus_user))
+        elif n1_user != 10 and n1_user != 1:#Normal
+            dice_user = self.normal
+            n_user = n1_user
+            if bonus_user != 0:
+                n_user = n_user + bonus_user
+        dict_dice_user = {"dice_user" : dice_user, "n_user" : n_user}
+        return dict_dice_user
+
+    def results(self, author, user, n_author, n_user, dice_author, dice_user, bank, amount):
+        msg = ""
+        winner = ""
+        loser = ""
+        if n_author > n_user:
+            #Winner
+            winner = author
+            n_winner = n_author
+            dice_winner = dice_author
+            #Loser
+            loser = user
+            n_loser = n_user
+            dice_loser = dice_user
+            #End
+            msg = "{} won ! And wins the amount of {}.".format(winner.mention, amount)
+            bank.transfer_credits(loser, winner, amount)
+            self.exp_up(winner)
+        elif n_user > n_author:
+            #Winner
+            winner = user
+            n_winner = n_user
+            dice_winner = dice_user
+            #Loser
+            loser = author
+            n_loser = n_author
+            dice_loser = dice_author
+            #End
+            msg = "{} won ! And wins the amount of {}.".format(winner.mention, amount)
+            bank.transfer_credits(loser, winner, amount)
+            self.exp_up(winner)
+        #Tie
+        elif n_author == n_user:
+            winner = author
+            n_winner = n_author
+            dice_winner = dice_author
+            loser = user
+            n_loser = n_user
+            dice_loser = dice_user
+            msg = "{} & {} : Tie ! No one wins, no one loses.".format(author.mention, user.mention)
+        dict_results = {"winner" : winner, "n_winner" : n_winner, "dice_winner" : dice_winner,
+                        "loser" : loser, "n_loser" : n_loser, "dice_loser" : dice_loser, "msg" : msg}
+        return dict_results
+
     @commands.group(name="idice", pass_context=True)
     async def _idice(self, ctx):
         '''"Parce que c'est une très bonne iDé !"'''
@@ -127,9 +232,9 @@ class IDiceBattle:
             await self.bot.say("{} : You can't duel yourself.".format(author.mention))
         else:
             #Check bank.account_exists (positive response)
-            if bank.account_exists(user) and bank.account_exists(author):#Raw retrieving data because of some bugs in the past (have to be retry)
-                bankauthor = dataIO.load_json("data/economy/bank.json")[server.id][author.id]["balance"]
-                bankuser = dataIO.load_json("data/economy/bank.json")[server.id][user.id]["balance"]
+            if bank.account_exists(user) and bank.account_exists(author):
+                bankauthor = bank.get_balance(author)
+                bankuser = bank.get_balance(user)
                 #Check account != 0
                 if bankauthor == 0 or bankuser == 0:
                     await self.bot.delete_message(ctx.message)
@@ -157,101 +262,21 @@ class IDiceBattle:
                                 await self.bot.say("{}: Your opponent didn't reply.".format(author.mention))
                             #Positive response
                             elif rea.reaction.emoji == '\U00002705':
-                                msg = ""
-                                winner = ""
-                                loser = ""
-                                crit_failure = "<:roll_echec_crit:367296625799856128> "
-                                failure = "<:roll_echec:367296637825056779> "
-                                normal = ":game_die: "
-                                crit_success = "<:roll_reussite:367296651058085888> "
-                                bonus_author = self.get_bonus(author)
-                                bonus_user = self.get_bonus(user)
-                                #Dice_Author
-                                n1_author = randint(1, 10)
-                                if n1_author == 10:#Critical success
-                                    n2_author = randint(1, 10)
-                                    n_author = n1_author + n2_author
-                                    dice_author = crit_success
-                                    bonus_author = bonus_author + int((0.50*bonus_author))
-                                    if bonus_author != 0:
-                                        n_author = n_author + bonus_author
-                                elif n1_author == 1:#Failure
-                                    n2_author = randint(1, 10)
-                                    n_author = n1_author + n2_author
-                                    if n2_author == 1:#Critical failure
-                                        dice_author = crit_failure
-                                    else:#Failure (following)
-                                        dice_author = failure
-                                        bonus_author = bonus_author - int((0.25*bonus_author))
-                                    if bonus_author != 0:
-                                        n_author = n_author + bonus_author
-                                        bonus_author = bonus_author - int((0.50*bonus_author))
-                                elif n1_author != 10 and n1_author != 1:#Normal
-                                    dice_author = normal
-                                    n_author = n1_author
-                                    if bonus_author != 0:
-                                        n_author = n_author + bonus_author
-                                #Dice_User
-                                n1_user = randint(1, 10)
-                                if n1_user == 10:#Critical success
-                                    n2_user = randint(1, 10)
-                                    n_user = n1_user + n2_user
-                                    dice_user = crit_success
-                                    bonus_user = bonus_user + int((0.50*bonus_user))
-                                    if bonus_user != 0:
-                                        n_user = n_user + bonus_user
-                                elif n1_user == 1:#Failure
-                                    n2_user = randint(1, 10)
-                                    n_user = n1_user + n2_user
-                                    if n2_user == 1:#Critical failure
-                                        dice_user = crit_failure
-                                    else:#Failure (following)
-                                        dice_user = failure
-                                        bonus_user = bonus_user - int((0.25*bonus_user))
-                                    if bonus_user != 0:
-                                        n_user = n_user + bonus_user
-                                        bonus_user = bonus_user - int((0.50*bonus_user))
-                                elif n1_user != 10 and n1_user != 1:#Normal
-                                    dice_user = normal
-                                    n_user = n1_user
-                                    if bonus_user != 0:
-                                        n_user = n_user + bonus_user
+                                dict_dice_author = self.dice_author(author)
+                                dice_author = dict_dice_author["dice_author"]
+                                n_author = dict_dice_author["n_author"]
+                                dict_dice_user = self.dice_user(user)
+                                dice_user = dict_dice_user["dice_user"]
+                                n_user = dict_dice_user["n_user"]
                                 #Résults
-                                if n_author > n_user:
-                                    #Winner
-                                    winner = author
-                                    n_winner = n_author
-                                    dice_winner = dice_author
-                                    #Loser
-                                    loser = user
-                                    n_loser = n_user
-                                    dice_loser = dice_user
-                                    #End
-                                    msg = "{} won ! And wins the amount of {}.".format(winner.mention, amount)
-                                    bank.transfer_credits(loser, winner, amount)
-                                    self.exp_up(winner)
-                                elif n_user > n_author:
-                                    #Winner
-                                    winner = user
-                                    n_winner = n_user
-                                    dice_winner = dice_user
-                                    #Loser
-                                    loser = author
-                                    n_loser = n_author
-                                    dice_loser = dice_author
-                                    #End
-                                    msg = "{} won ! And wins the amount of {}.".format(winner.mention, amount)
-                                    bank.transfer_credits(loser, winner, amount)
-                                    self.exp_up(winner)
-                                #Tie
-                                elif n_author == n_user:
-                                    winner = author
-                                    n_winner = n_author
-                                    dice_winner = dice_author
-                                    loser = user
-                                    n_loser = n_user
-                                    dice_loser = dice_user
-                                    msg = "{} & {} : Tie ! No one wins, no one loses.".format(author.mention, user.mention)
+                                dict_results = self.results(author, user, n_author, n_user, dice_author, dice_user, bank, amount)
+                                winner = dict_results["winner"]
+                                n_winner = dict_results["n_winner"]
+                                dice_winner = dict_results["dice_winner"]
+                                loser = dict_results["loser"]
+                                n_loser = dict_results["n_loser"]
+                                dice_loser = dict_results["dice_loser"]
+                                msg = dict_results["msg"]
                                 #Viewing
                                 data = discord.Embed(description="iDice Duel :game_die: :crossed_swords:", color=author.color)
                                 data.add_field(name=winner.display_name, value="{} {} {}".format(dice_winner, n_winner, dice_winner))
