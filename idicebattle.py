@@ -163,6 +163,10 @@ class IDiceBattle:
         return dict_dice_author
 
     def dice_user(self, user, server):
+        crit_failure = discord.utils.get(server.emojis, name="crit_failure_dice")
+        failure = discord.utils.get(server.emojis, name="failure_dice")
+        normal = discord.utils.get(server.emojis, name="normal_dice")
+        crit_success = discord.utils.get(server.emojis, name="crit_success_dice")
         n1_user = randint(1, 10)
         bonus_user = self.get_bonus(user, server)
         if n1_user == 10:#Critical success
