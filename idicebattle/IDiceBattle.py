@@ -211,6 +211,11 @@ class IDiceBattle(commands.Cog):
         else:
             await ctx.send("Have you forgotten? The configs have already been initialized.")
 
+    @commands.group()
+    @commands.guild_only()
+    async def idice(self, ctx):
+        '''"Parce que c'est une très bonne iDé !"'''
+
     @idice.command(name="profile")
     @commands.guild_only()
     async def idice_profile(self, ctx, user : discord.Member = None):
