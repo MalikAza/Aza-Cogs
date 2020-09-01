@@ -2,7 +2,7 @@
 #Idea developped by Aza' & Hitsumo
 #cog coding by Aza'
 #converted in V3 by Aza'
-#wanting to burn it all during the convertion by Aza'
+#wanting to burn it all during the conversion by Aza'
 from redbot.core import commands, checks, Config, bank
 from random import randint
 import discord
@@ -19,6 +19,17 @@ class IDiceBattle(commands.Cog):
             "bonus": 0
         }
         self.config.register_member(**default_profile)
+        self.config.register_guild(config=False)
+
+    def enough_emojis(self, server):
+        nbr_emoji = 0
+        for emoji in server.emojis:
+            if emoji.animated == False:
+                nbr_emoji += 1
+        if nbr_emoji <= 46:
+            return True
+        else:
+            return False
 
     async def exp_up(self, user):
         exp = await self.config.member(user).exp()
@@ -154,6 +165,51 @@ class IDiceBattle(commands.Cog):
                 n_bot = n_bot + bonus_bot
         dict_dice_bot = {"dice_bot" : dice_bot, "n_bot" : n_bot}
         return dict_dice_bot
+
+    @commands.group()
+    @commands.guild_only()
+    async def idiceset(self, ctx):
+        """The differents configs for iDice."""
+
+    @idiceset.command(name="emoji")
+    @commands.guild_only()
+    async def idiceset_emoji(self, ctx):
+        """Install the essentials emoji."""
+        author = ctx.author
+        server = ctx.guild
+        #Checking if this command has already been used
+        if not await self.config.guild(server):
+            #Checking if there is enough emojis slot in the server
+            if not await self.enough_emojis(server):
+                #Not enough slot
+                await ctx.send("You don't have enough places available in your server's emojis.\n"
+                               "The iDice Battle need 4 places available in your server's emojis.")
+            else:#Enough slot and asking if it's ok to create
+                msg = ctx.send("It will take 4 places available in your server's emojis. Is it ok ?")
+                await msg.add_reaction('✅')
+                await msg.add_reaction('❌')
+                try:
+                    def check(reaction, user):
+                        return user == author and (reaction.emoji == '✅' or reaction.emoji == '❌')
+
+                    reaction, user = await self.bot.wait_for("reaction_add", timeout=30.0, check=check)
+                    #Positive response
+                    if reaction.emoji == '✅':
+                        await ctx.send("The configs have been initialized.")
+
+#We need to create the 4 emojis in the server right here
+#Maybe an external (of this command) function ?
+
+                        await self.config.guild(server).config.set(True)
+                    #Negative response
+                    if reaction.emoji == '❌':
+                        await ctx.send("Ok then...\nThe configs steps are stopped.")
+                #No response
+                except asyncio.TimeoutError:
+                    await ctx.send("You didn't answer to me, the configs steps are stopped.")
+        #Command has already been used
+        else:
+            await ctx.send("Have you forgotten? The configs have already been initialized.")
 
     @commands.group()
     @commands.guild_only()
