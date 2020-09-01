@@ -14,11 +14,11 @@ The principle of the game is really easy: you duel people using dices, but becau
 ## Getting started
 ### Installation
 (Since the cog is experimental and only usable for a personnal Redbot (because of the emojis), we do not recommend to install it.)
-#### Using the [CogBoard](https://github.com/jack1142/JackCogs) cog **(Not supported yet)**
+#### Using the [CogBoard](https://github.com/jack1142/JackCogs) cog *(Not supported yet)*
 ~~Simply use Red bot command `[p]cogboard search idicebattle` and install the cog.~~
 #### Without the [CogBoard](https://github.com/jack1142/JackCogs) cog
-  1.Ensure downloader is loaded with `[p]load downloader`
-  2.Run `[p]repo add Aza-Cogs https://github.com/MalikAza/Aza-Cogs/`
-  3.Run `[p]cog install Aza-Cogs idicebattle`
+*  1.Ensure downloader is loaded with `[p]load downloader`
+*  2.Run `[p]repo add Aza-Cogs https://github.com/MalikAza/Aza-Cogs/`
+*  3.Run `[p]cog install Aza-Cogs idicebattle`
 ### Usage
 Simply do command `[p]idice` to see all the available commands and `[p]help idice <command_name>` to see more informations.
