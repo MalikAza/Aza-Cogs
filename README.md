@@ -15,4 +15,4 @@ The principle of the game is really easy: you duel people using dices, but becau
 ### Installation
 Simply use Red bot command `[p]cogboard search idicebattle` and install the cog.
 ### Usage
-Simply do command `[p]idice` to see all the available commands and `[p]idice help <nameofcommand>` to see more informations.
+Simply do command `[p]idice` to see all the available commands and `[p]help idice <command_name>` to see more informations.
