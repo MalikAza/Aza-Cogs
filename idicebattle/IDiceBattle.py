@@ -168,14 +168,17 @@ class IDiceBattle(commands.Cog):
         author = ctx.author
         if user is not None:
             author = user
-        data = discord.Embed(description="iDice Profile",
-                             color=author.color)
-        data.set_author(name=author.display_name, icon_url=author.avatar_url)
-        data.add_field(name="Level 🏆", value=await self.config.member(author).lvl())
-        data.add_field(name="Experience ⭐", value=await self.config.member(author).exp())
-        data.add_field(name="Bonus", value=await self.config.member(author).bonus(), inline=False)
-        await ctx.message.delete()
-        await ctx.send(embed=data)
+        if author != self.bot.user:# Checking if bot
+            data = discord.Embed(description="iDice Profile",
+                                 color=author.color)
+            data.set_author(name=author.display_name, icon_url=author.avatar_url)
+            data.add_field(name="Level 🏆", value=await self.config.member(author).lvl())
+            data.add_field(name="Experience ⭐", value=await self.config.member(author).exp())
+            data.add_field(name="Bonus", value=await self.config.member(author).bonus(), inline=False)
+            await ctx.message.delete()
+            await ctx.send(embed=data)
+        else:# No bot profile
+            await ctx.send("I don't have any profile. Sorry not sorry but I'm the god of this game.")
 
     @idice.command(name="duel")
     @commands.guild_only()
@@ -185,6 +188,9 @@ class IDiceBattle(commands.Cog):
         # No auto-duel
         if author == user:
             await ctx.send("{} : You can't duel yourself.".format(author.mention))
+        # No bot duel
+        elif user == self.bot.user:
+            await ctx.send("{} : Try to use `{}idice pve` instead.")
         else:
             # Check account.can_spend() | positive response
             if await bank.can_spend(author, amount) and await bank.can_spend(user, amount):
