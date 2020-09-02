@@ -3,7 +3,7 @@
 # cog coding by Aza'
 # converted in V3 by Aza'
 # wanting to burn it all during the conversion by Aza'
-from redbot.core import commands, Config, bank
+from redbot.core import commands, Config, bank, checks
 from random import randint
 import discord
 import asyncio
@@ -22,8 +22,7 @@ def enough_emojis(server):
 
 class IDiceBattle(commands.Cog):
 
-    def __init__(self, bot, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, bot):
         self.bot = bot
         self.config = Config.get_conf(self, identifier=2110932804290696)
         default_profile = {
@@ -79,7 +78,7 @@ class IDiceBattle(commands.Cog):
         return self.dice(bonus_user=bonus_user, dict_user="dice_user", dict_n_user="n_user")
 
     def dice_bot(self, bonus_author):
-        return self.dice(bonus_user=bonus_author, dict_user="dice_bot", dict_n_user="n_bot")
+        return self.dice(bonus_user=int(1.5 * bonus_author), dict_user="dice_bot", dict_n_user="n_bot")
 
     def dice(self, bonus_user, dict_user, dict_n_user):
         crit_failure = self.bot.get_emoji(380852648213217290)
@@ -114,13 +113,13 @@ class IDiceBattle(commands.Cog):
 
     @commands.group()
     @commands.guild_only()
-    async def idice_set(self, ctx):
-        """The different configs for iDice."""
+    async def idiceset(self, ctx):
+        """The differents configs for iDice."""
 
-    @idice_set.command(name="emoji")
+    @idiceset.command(name="emoji")
     @commands.guild_only()
-    async def idice_set_emoji(self, ctx):
-        """Install the essentials emoji."""
+    async def idiceset_emoji(self, ctx):
+        """Install the essentials emojis."""
         author = ctx.author
         server = ctx.guild
         # Checking if this command has already been used
@@ -169,7 +168,8 @@ class IDiceBattle(commands.Cog):
         author = ctx.author
         if user is not None:
             author = user
-        data = discord.Embed(description="iDice Profile", color=author.color)
+        data = discord.Embed(description="iDice Profile",
+                             color=author.color)
         data.set_author(name=author.display_name, icon_url=author.avatar_url)
         data.add_field(name="Level 🏆", value=await self.config.member(author).lvl())
         data.add_field(name="Experience ⭐", value=await self.config.member(author).exp())
