@@ -21,7 +21,7 @@ The principle of the game is really easy: you duel people using dices, but becau
   2. Run `[p]repo add Aza-Cogs https://github.com/MalikAza/Aza-Cogs/`
   3. Run `[p]cog install Aza-Cogs idicebattle`
 ### Usage
-Simply do command `[p]idice` to see all the available commands and `[p]help idice <command_name>` to see more informations.
+Simply do command `[p]help IDiceBattle` to see all the available commands and `[p]help idice <command_name>` to see more informations.
 ## Contact
 * Discord : `Aza'#2804`
 * Also on the [Red Official Discord server](https://www.discord.gg/red)
