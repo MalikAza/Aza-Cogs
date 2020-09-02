@@ -1,6 +1,6 @@
 # cog.name inspired by Hitsumo
 # Idea developed by Aza' & Hitsumo
-# cog coding by Aza'
+# cog coding by Aza' & RissCrew
 # converted in V3 by Aza'
 # wanting to burn it all during the conversion by Aza'
 from redbot.core import commands, Config, bank, checks
