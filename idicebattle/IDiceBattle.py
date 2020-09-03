@@ -7,7 +7,16 @@ from redbot.core import commands, Config, bank, checks
 from random import randint
 import discord
 import asyncio
+import matplotlib.pyplot as plt
 
+'''
+Those are url for the emojis:
+
+crit_failure: https://i.imgur.com/paUn18x.png
+failure: https://i.imgur.com/ZlUJv2a.png
+normal_dice: https://i.imgur.com/BJ3nNtA.png
+crit_success: https://i.imgur.com/KRO8zMD.png
+'''
 
 def enough_emojis(server):
     nbr_emoji = 0
@@ -352,3 +361,74 @@ class IDiceBattle(commands.Cog):
         if self_exp_up == "ylvlup":
             lvl_winner = await self.config.member(winner).lvl()
             await ctx.send("{} has leveled up to {} ! Congrats !!!".format(winner.mention, lvl_winner))
+
+
+    @idice.command(name="stats")
+    @commands.guild_only()
+    async def idice_stats(self, ctx, type = "graph", user: discord.Member = None, lim_axis: int = 0):
+        author = ctx.author
+        lvl_asked = lim_axis # Using lim_axis as lvl_asked for type: bar
+                             # This command first use is for type: graph
+                             # but some asked for bar
+        if user == None:
+            user = author
+        perso_lvl = await self.config.member(user).lvl()
+        perso_exp = await self.config.member(user).exp()
+        # Calculating the sum of user exp for lim_axis or bar
+        x2 = [perso_lvl + perso_exp/(perso_lvl*10)]
+
+        for i in range(1,perso_lvl+1):
+            perso_exp += i*10
+        if type == "graph":
+            y2 = [perso_exp]
+        # Exp Needed
+        exp = 0
+        lvl = 0
+        if type == "graph":
+            to_do = 100
+            x = [0]
+            y = [0]
+        else:
+            to_do = lvl_asked
+
+        for lvl in range(0, to_do):
+            exp += lvl*10
+            if type == "graph":
+                x.append(lvl)
+                y.append(exp)
+
+        if type == "graph":
+            #  Exp axis limit for type: graph
+            def y_lim_min(perso_lvl):
+                exp_lim_min = 0
+                if perso_lvl-lim_ask < 0:
+                    return exp_lim_min
+                else:
+                    for k in range(0, perso_lvl-lim_ask):
+                        exp_lim_min += k*10
+                    return exp_lim_min
+
+            def y_lim_max(perso_lvl):
+                exp_lim_max = 0
+                for m in range(0, perso_lvl+lim_ask):
+                    exp_lim_max += m*10
+                return exp_lim_max
+            # Graph
+            plt.plot(x,y)
+            plt.plot(x2,y2,'o')
+            plt.title("IDiceBattle\nExperience / Level")
+            plt.ylabel("Exp")
+            plt.xlabel("Lvl")
+            plt.legend(["Experience needed", "You are here"])
+            if lim_ask != 0:
+                plt.xlim(perso_lvl-lim_ask,perso_lvl+lim_ask)
+                plt.ylim(y_lim_min(perso_lvl), y_lim_max(perso_lvl))
+            plt.savefig('', dpi=300, bbox_inches='tight') # Need something to do w/ BytesIO
+        else:
+            plt.bar("Experience needed for the level {}".format(to_do), exp)
+            plt.bar("You", perso_exp)
+            plt.title("IDiceBattle")
+            plt.ylabel("Experience")
+            plt.savefig('', dpi=300, bbox_inches='tight') # Need something to do w/ BytesIO
+        # Viewing
+        # Maybe something with a discord.Embed or just uploading the image like a retard
