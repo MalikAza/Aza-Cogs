@@ -5,6 +5,7 @@
 # wanting to burn it all during the conversion by Aza'
 from redbot.core import commands, Config, bank, checks
 from random import randint
+from io import BytesIO
 import discord
 import asyncio
 import matplotlib.pyplot as plt
@@ -370,6 +371,7 @@ class IDiceBattle(commands.Cog):
         lvl_asked = lim_axis # Using lim_axis as lvl_asked for type: bar
                              # This command first use is for type: graph
                              # but some asked for bar
+        img = BytesIO()
         if user == None:
             user = author
         perso_lvl = await self.config.member(user).lvl()
@@ -423,12 +425,13 @@ class IDiceBattle(commands.Cog):
             if lim_ask != 0:
                 plt.xlim(perso_lvl-lim_ask,perso_lvl+lim_ask)
                 plt.ylim(y_lim_min(perso_lvl), y_lim_max(perso_lvl))
-            plt.savefig('', dpi=300, bbox_inches='tight') # Need something to do w/ BytesIO
+            plt.savefig(io, dpi=300, bbox_inches='tight') # Need something to do w/ BytesIO
         else:
             plt.bar("Experience needed for the level {}".format(to_do), exp)
             plt.bar("You", perso_exp)
             plt.title("IDiceBattle")
             plt.ylabel("Experience")
-            plt.savefig('', dpi=300, bbox_inches='tight') # Need something to do w/ BytesIO
+            plt.savefig(io, dpi=300, bbox_inches='tight') # Need something to do w/ BytesIO
         # Viewing
         # Maybe something with a discord.Embed or just uploading the image like a retard
+        await ctx.send(file=img)
