@@ -10,6 +10,7 @@ import io
 import discord
 import asyncio
 import matplotlib.pyplot as plt
+import aiohttp
 
 '''
 Those are url for the emojis:
@@ -30,6 +31,41 @@ def enough_emojis(server):
     else:
         return False
 
+async def crit_failure_img():
+    async with aiohttp.ClientSession() as session:
+      async with session.get('https://i.imgur.com/paUn18x.png') as w:
+          data = await w.read()
+          img = BytesIO(w)
+          img.seek(0)
+          image = discord.File(img, filename='crit_failure')
+    return img
+
+async def failure_img():
+    async with aiohttp.ClientSession() as session:
+      async with session.get('https://i.imgur.com/ZlUJv2a.png') as w:
+          data = await w.read()
+          img = BytesIO(w)
+          img.seek(0)
+          image = discord.File(img, filename='failure')
+    return img
+
+async def normal_dice_img():
+    async with aiohttp.ClientSession() as session:
+      async with session.get('https://i.imgur.com/BJ3nNtA.png') as w:
+          data = await w.read()
+          img = BytesIO(w)
+          img.seek(0)
+          image = discord.File(img, filename='normal_dice')
+    return img
+
+async def crit_success_img():
+    async with aiohttp.ClientSession() as session:
+      async with session.get('https://i.imgur.com/KRO8zMD.png') as w:
+          data = await w.read()
+          img = BytesIO(w)
+          img.seek(0)
+          image = discord.File(img, filename='crit_success')
+    return img
 
 class IDiceBattle(commands.Cog):
 
@@ -41,8 +77,15 @@ class IDiceBattle(commands.Cog):
             "exp": 0,
             "bonus": 0
         }
+        default_guild = {
+            "config": False,
+            "crit_failure": None,
+            "failure": None,
+            "normal_dice": None,
+            "crit_success": None
+        }
         self.config.register_member(**default_profile)
-        self.config.register_guild(config=False)
+        self.config.register_guild(**default_guild)
 
     async def exp_up(self, user):
         exp = await self.config.member(user).exp()
@@ -202,11 +245,22 @@ class IDiceBattle(commands.Cog):
                     # Positive response
                     if reaction.emoji == '✅':
                         await ctx.send("The configs have been initialized.")
-
-                        # We need to create the 4 emojis in the server right here
-                        # Maybe an external (of this command) function ?
-
+                        # Creating emojis
+                        await server.create_custom_emoji(name = "crit_failure", image = await crit_failure_img())
+                        await server.create_custom_emoji(name = "failure", image = await failure_img())
+                        await server.create_custom_emoji(name = "normal_dice", image = await normal_dice_img())
+                        await server.create_custom_emoji(name = "crit_success", image = await crit_success_img())
+                        # Setting config to True and adding emojis.id
                         await self.config.guild(server).config.set(True)
+                        for emoji in server.emojis:
+                            if emoji.name == 'crit_failure':
+                                await self.config.guild(server).crit_failure.set(emoji.id)
+                            elif emoji.name == 'failure':
+                                await self.config.guild(server).failure.set(emoji.id)
+                            elif emoji.name == 'normal_dice':
+                                await self.config.guild(server).normal_dice.set(emoji.id)
+                            elif emoji.name == 'crit_success':
+                                await self.config.guild(server).crit_success.set(emoji.id)
                     # Negative response
                     if reaction.emoji == '❌':
                         await ctx.send("Ok then...\nThe configs steps are stopped.")
