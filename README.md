@@ -10,6 +10,7 @@ The principle of the game is really easy: you duel people using dices, but becau
 * Evolving dices: We talked about how you learn experience, but not it's utility. After a certain amount of experience, you will level up and get some bonus like for example a +1 to all your dice, making you stronger to duel your opponents. 
 * Profile view: you can spy other user profiles to see their level and the bonus on their dice, or to see yours.
 * V10 Dice: the game use a V10 dice who is an improve of the 10 dice, adding critical success, failure and critical failure which add fun to it. You can see more about it at [rolz.org](https://rolz.org/wiki/page?w=help&n=BasicCodes)
+* Stats: You can see yours or someone else stats with some curve and bar graphs !
 
 ## Getting started
 ### Installation
