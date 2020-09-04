@@ -6,6 +6,7 @@
 from redbot.core import commands, Config, bank, checks
 from random import randint
 from io import BytesIO
+import io
 import discord
 import asyncio
 import matplotlib.pyplot as plt
@@ -442,61 +443,99 @@ class IDiceBattle(commands.Cog):
         perso_lvl = await self.config.member(user).lvl()
         perso_exp = await self.config.member(user).exp()
         # Calculating the sum of user exp for lim_axis or bar
-        x2 = [perso_lvl + perso_exp/(perso_lvl*10)]
+        x2 = [perso_lvl + perso_exp / (perso_lvl * 10)]
 
-        for i in range(1,perso_lvl+1):
-            perso_exp += i*10
+        for i in range(1, perso_lvl + 1):
+            perso_exp += i * 10
         if type == "graph":
             y2 = [perso_exp]
         # Exp Needed
         exp = 0
         lvl = 0
+        to_do = 100
         if type == "graph":
-            to_do = 100
             x = [0]
             y = [0]
         else:
             to_do = lvl_asked
+            if to_do == 0:
+                to_do = 100
 
         for lvl in range(0, to_do):
-            exp += lvl*10
+            exp += lvl * 10
             if type == "graph":
                 x.append(lvl)
                 y.append(exp)
 
         if type == "graph":
             #  Exp axis limit for type: graph
-            def y_lim_min(perso_lvl):
+            def y_lim_min():
                 exp_lim_min = 0
-                if perso_lvl-lim_ask < 0:
+                if perso_lvl - lim_axis < 0:
+                    return exp_lim_min
+                elif perso_lvl - lim_axis > 100:
+                    return exp_lim_min
+                elif lim_axis == 0:
                     return exp_lim_min
                 else:
-                    for k in range(0, perso_lvl-lim_ask):
-                        exp_lim_min += k*10
+                    for k in range(0, perso_lvl - lim_axis):
+                        exp_lim_min += k * 10
                     return exp_lim_min
 
-            def y_lim_max(perso_lvl):
+            def y_lim_max():
                 exp_lim_max = 0
-                for m in range(0, perso_lvl+lim_ask):
-                    exp_lim_max += m*10
-                return exp_lim_max
+                if perso_lvl + lim_axis < 0:
+                    for m in range(0, 100):
+                        exp_lim_max += m * 10
+                    return exp_lim_max
+                elif perso_lvl + lim_axis > 100:
+                    for m in range(0, 100):
+                        exp_lim_max += m * 10
+                    return exp_lim_max
+                elif lim_axis == 0:
+                    for m in range(0, 100):
+                        exp_lim_max += m * 10
+                    return exp_lim_max
+                else:
+                    for m in range(0, perso_lvl + lim_axis):
+                        exp_lim_max += m * 10
+                    return exp_lim_max
+
+            def x_lim_min():
+                if perso_lvl - lim_axis < 0:
+                    return perso_lvl - perso_lvl
+                elif perso_lvl - lim_axis > 100:
+                    return perso_lvl - perso_lvl
+                elif lim_axis == 0:
+                    return 0
+                else:
+                    return perso_lvl - lim_axis
+
+            def x_lim_max():
+                if perso_lvl + lim_axis > 100:
+                    return 100
+                elif perso_lvl + lim_axis < 0:
+                    return 100
+                elif lim_axis == 0:
+                    return 100
+                else:
+                    return perso_lvl + lim_axis
             # Graph
             plt.plot(x,y)
             plt.plot(x2,y2,'o')
-            plt.title("IDiceBattle\nExperience / Level")
-            plt.ylabel("Exp")
-            plt.xlabel("Lvl")
-            plt.legend(["Experience needed", "You are here"])
-            if lim_ask != 0:
-                plt.xlim(perso_lvl-lim_ask,perso_lvl+lim_ask)
-                plt.ylim(y_lim_min(perso_lvl), y_lim_max(perso_lvl))
-            plt.savefig(io, dpi=300, bbox_inches='tight') # Need something to do w/ BytesIO
+            plt.title("{} IDice Stats\nExperience / Level".format(user.name))
+            plt.xlabel("Level")
+            plt.legend(["Experience needed", "You are here"], bbox_to_anchor=(1.05, 1), loc='best', borderaxespad=0.)
+            plt.xlim(x_lim_min(), x_lim_max())
+            plt.ylim(y_lim_min(), y_lim_max())
         else:
-            plt.bar("Experience needed for the level {}".format(to_do), exp)
+            plt.bar("Experience\nneeded for the level {}".format(to_do), exp)
             plt.bar("You", perso_exp)
-            plt.title("IDiceBattle")
-            plt.ylabel("Experience")
-            plt.savefig(io, dpi=300, bbox_inches='tight') # Need something to do w/ BytesIO
+            plt.title("{} IDice Stats".format(user.name))
+        plt.ylabel("Experience")
+        plt.savefig(img, dpi=300, bbox_inches='tight', format="png")
+        plt.close()
         # Viewing
-        # Maybe something with a discord.Embed or just uploading the image like a retard
-        await ctx.send(file=img)
+        file_name = "{} IDice Stats - {}.png".format(user.name, type)
+        img.seek(0)
+        await ctx.send(file=discord.File(img, filename=file_name))
