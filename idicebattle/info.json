@@ -2,11 +2,11 @@
   "author": ["Aza' (Aza'#2804)"],
   "name": "IDiceBattle",
   "min_bot_version": "3.0.2",
-  "description": "Dueling friends or the bot itself by rolling dices. With a level and experiences system according bonuses on your dices."
+  "description": "Dueling friends or the bot itself by rolling dices. With a level and experiences system according bonuses on your dices.",
   "hidden": false,
   "install_msg": "Thank you for installing the idicebattle cog.\nType `[p]help idice` and `[p]help IDiceBattle` for a quick overview of the commands\n**This cog needs Bank, which must be loaded with `[p]load bank`.**",
   "required_cogs": {},
   "requirements": ["io", "aiohttp", "matplotlib"],
-  "short": "Fun cogs, rolling dice duel."
+  "short": "Fun cogs, rolling dice duel.",
   "tags": ["fun", "bank", "economy", "dice", "level", "experience", "duel"]
 }
