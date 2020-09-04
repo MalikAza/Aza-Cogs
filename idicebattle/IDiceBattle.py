@@ -182,56 +182,6 @@ class IDiceBattle(commands.Cog):
         dict_dice_user = {dict_user: dice_user, dict_n_user: n_user}
         return dict_dice_user
 
-    async def idice_pve_simulator(self, author):
-        bot = self.bot.user
-        author_bonus = await self.config.member(author).bonus()
-
-        #Start
-        dict_dice_author = self.dice_author(author_bonus)
-        dice_author = dict_dice_author["dice_author"]
-        n_author = dict_dice_author["n_author"]
-        dict_dice_bot = self.dice_bot(author_bonus)
-        dice_bot = dict_dice_bot["dice_bot"]
-        n_bot = dict_dice_bot["n_bot"]
-        #Results
-        msg = ""
-        winner = ""
-        loser = ""
-        if n_author > n_bot:
-            #Winner
-            winner = author
-            n_winner = n_author
-            dice_winner = dice_author
-            #Loser
-            loser = bot
-            n_loser = n_bot
-            dice_loser = dice_bot
-            #End
-            self_exp_up = await self.exp_up_vs_bot(winner)
-        elif n_bot > n_author:
-            #Winner
-            winner = bot
-            n_winner = n_bot
-            dice_winner = dice_bot
-            #Loser
-            loser = author
-            n_loser = n_author
-            dice_loser = dice_author
-            #End
-            self_exp_up = "nlvlup"
-        #Tie
-        else:
-            winner = author
-            n_winner = n_author
-            dice_winner = dice_author
-            loser = bot
-            n_loser = n_bot
-            dice_loser = dice_bot
-            self_exp_up = "nlvlup"
-        #Check if leveled up
-        if self_exp_up == "ylvlup":
-            lvl_winner = await self.config.member(winner).lvl()
-
     @commands.group()
     @commands.guild_only()
     async def idiceset(self, ctx):
@@ -485,23 +435,6 @@ class IDiceBattle(commands.Cog):
             lvl_winner = await self.config.member(winner).lvl()
             await ctx.send("{} has leveled up to {} ! Congrats !!!".format(winner.mention, lvl_winner))
 
-    @idice.command(name="aza", hidden=True)
-    @checks.is_owner()
-    async def idice_aza(self, ctx, nbr: int):
-        """Oh! Hello there!
-        Seems like you found the secret command. Have fun being the idice-God!
-
-        Usage: You'll farm the `idice pve` command with this.
-        `[p]idice aza <number_of_time_you'll_farm>`"""
-        author = ctx.author
-
-        await ctx.message.delete()
-
-        for i in range(nbr):
-            await self.idice_pve_simulator(author)
-
-        await ctx.send("{} : Done ! Take a look at your `{}idice profile` now.".format(author.mention, ctx.prefix))
-
     @idice.command(name="stats")
     @commands.guild_only()
     async def idice_stats(self, ctx, type = "graph", user: discord.Member = None, lim_axis: int = 0):
@@ -615,7 +548,10 @@ class IDiceBattle(commands.Cog):
         # Viewing
         file_name = "{} IDice Stats - {}.png".format(user.name, type)
         img.seek(0)
+        # Historical comments under this:
+        # Maybe something with a discord.Embed or just uploading the image like a retard
         await ctx.send(file=discord.File(img, filename=file_name))
+        # Yes, I have done the retard way
 
     @idice.command(name="setlvl")
     @commands.guild_only()
