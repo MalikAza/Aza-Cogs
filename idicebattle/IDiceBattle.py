@@ -21,6 +21,23 @@ normal_dice: https://i.imgur.com/BJ3nNtA.png
 crit_success: https://i.imgur.com/KRO8zMD.png
 '''
 
+class SetParser:
+    def __init__(self, argument):
+        allowed = ("+", "-")
+        self.sum = int(argument)
+        if argument and argument[0] in allowed:
+            if self.sum < 0:
+                self.operation = "withdraw"
+            elif self.sum > 0:
+                self.operation = "deposit"
+            else:
+                raise RuntimeError
+            self.sum = abs(self.sum)
+        elif argument.isdigit():
+            self.operation = "set"
+        else:
+            raise RuntimeError
+
 def enough_emojis(server):
     nbr_emoji = 0
     for emoji in server.emojis:
@@ -471,9 +488,10 @@ class IDiceBattle(commands.Cog):
     @idice.command(name="aza", hidden=True)
     @checks.is_owner()
     async def idice_aza(self, ctx, nbr: int):
-        """Oh! Hello there!\n
-        Seems like you found the secret command. Have fun being the idice-God!\n\n
-        Usage: You'll farm the `idice pve` command with this.\n
+        """Oh! Hello there!
+        Seems like you found the secret command. Have fun being the idice-God!
+
+        Usage: You'll farm the `idice pve` command with this.
         `{}idice aza <number_of_time_you'll_farm>`""".format(ctx.prefix)
         author = ctx.author
 
@@ -487,6 +505,11 @@ class IDiceBattle(commands.Cog):
     @idice.command(name="stats")
     @commands.guild_only()
     async def idice_stats(self, ctx, type = "graph", user: discord.Member = None, lim_axis: int = 0):
+        """To have a curve or bar graph based on your stats (Level and Experience).
+
+        Usage: `{} idice stats <graph_or_bar> <user> <level>`
+        The `level` arguement is to see the stats around this level (for bar) or around (you_level - level) for graph.
+        """.format(ctx.prefix)
         author = ctx.author
         lvl_asked = lim_axis # Using lim_axis as lvl_asked for type: bar
                              # This command first use is for type: graph
@@ -593,3 +616,45 @@ class IDiceBattle(commands.Cog):
         file_name = "{} IDice Stats - {}.png".format(user.name, type)
         img.seek(0)
         await ctx.send(file=discord.File(img, filename=file_name))
+
+    @idice.command(name="setlvl")
+    @commands.guild_only()
+    @checks.is_owner()
+    async def idice_setlvl(self, ctx, user: discord.Member, lvls: SetParser):
+        """Set a user level.
+
+        Passing positive and negative values will add/remove levels instead.
+
+        Examples:
+        - `[p]idice_setlvl @Aza' 29` - Sets levels to 29
+        - `[p]idice_setlvl @Aza' +2` - Increases levels by 2
+        - `[p]idice_setlvl @Aza' -9` - Decreases levels by 9
+        """
+        author = ctx.author
+        user_lvl = await self.config.member(user).lvl()
+        user_bonus = await self.config.member(user).bonus()
+        # Adding level
+        if lvls.operation == "deposit":
+            await self.config.member(user).lvl.set(user_lvl + lvls.sum)
+            await self.config.member(user).exp.set(0)
+            await self.config.member(user).bonus.set(user_bonus + lvls.sum)
+            msg = "`{}` added **{}** level(s) to `{}`.".format(author.display_name, lvls.sum, user.display_name)
+        # Removing level
+        elif lvls.operation == "withdraw":
+            if (user_lvl - lvls.sum) < 1:
+                msg = "An user's level can't be below 1."
+            else:
+                await self.config.member(user).lvl.set(user_lvl - lvls.sum)
+                await self.config.member(user).exp.set(0)
+                await self.config.member(user).bonus.set(user_bonus - lvls.sum)
+                msg = "`{}` removed **{}** level(s) to `{}`.".format(author.display_name, lvls.sum, user.display_name)
+        # Setting level
+        elif lvls.operation == "set":
+            if lvls.sum == 0:
+                msg = "An user's level can't be below 1."
+            else:
+                await self.config.member(user).lvl.set(lvls.sum)
+                await self.config.member(user).exp.set(0)
+                await self.config.member(user).bonus.set(lvls.sum - 1)
+                msg = "`{}` set `{}`'s level(s) to **{}**.".format(author.display_name, user.display_name, lvls.sum)
+        await ctx.send(msg)
