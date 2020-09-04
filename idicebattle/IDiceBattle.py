@@ -492,7 +492,7 @@ class IDiceBattle(commands.Cog):
         Seems like you found the secret command. Have fun being the idice-God!
 
         Usage: You'll farm the `idice pve` command with this.
-        `{}idice aza <number_of_time_you'll_farm>`""".format(ctx.prefix)
+        `[p]idice aza <number_of_time_you'll_farm>`"""
         author = ctx.author
 
         await ctx.message.delete()
@@ -507,9 +507,9 @@ class IDiceBattle(commands.Cog):
     async def idice_stats(self, ctx, type = "graph", user: discord.Member = None, lim_axis: int = 0):
         """To have a curve or bar graph based on your stats (Level and Experience).
 
-        Usage: `{} idice stats <graph_or_bar> <user> <level>`
-        The `level` arguement is to see the stats around this level (for bar) or around (you_level - level) for graph.
-        """.format(ctx.prefix)
+        Usage: `[p]idice stats <graph_or_bar> <user> <level>`
+        The `level` arguement is to see the stats around this level (for bar) or around (level - you_level - level) for graph.
+        """
         author = ctx.author
         lvl_asked = lim_axis # Using lim_axis as lvl_asked for type: bar
                              # This command first use is for type: graph
