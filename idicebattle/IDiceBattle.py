@@ -21,6 +21,40 @@ normal_dice: https://i.imgur.com/BJ3nNtA.png
 crit_success: https://i.imgur.com/KRO8zMD.png
 '''
 
+def enough_emojis(server):
+    nbr_emoji = 0
+    for emoji in server.emojis:
+        if not emoji.animated:
+            nbr_emoji += 1
+    if nbr_emoji <= 46:
+        return True
+    else:
+        return False
+
+async def crit_failure_img():
+    async with aiohttp.ClientSession() as session:
+      async with session.get('https://i.imgur.com/paUn18x.png') as w:
+          data = await w.read()
+          return data
+
+async def failure_img():
+    async with aiohttp.ClientSession() as session:
+      async with session.get('https://i.imgur.com/ZlUJv2a.png') as w:
+          data = await w.read()
+          return data
+
+async def normal_dice_img():
+    async with aiohttp.ClientSession() as session:
+      async with session.get('https://i.imgur.com/BJ3nNtA.png') as w:
+          data = await w.read()
+          return data
+
+async def crit_success_img():
+    async with aiohttp.ClientSession() as session:
+      async with session.get('https://i.imgur.com/KRO8zMD.png') as w:
+          data = await w.read()
+          return data
+
 class SetParser:
     def __init__(self, argument):
         allowed = ("+", "-")
@@ -38,52 +72,6 @@ class SetParser:
         else:
             raise RuntimeError
 
-def enough_emojis(server):
-    nbr_emoji = 0
-    for emoji in server.emojis:
-        if not emoji.animated:
-            nbr_emoji += 1
-    if nbr_emoji <= 46:
-        return True
-    else:
-        return False
-
-async def crit_failure_img():
-    async with aiohttp.ClientSession() as session:
-      async with session.get('https://i.imgur.com/paUn18x.png') as w:
-          data = await w.read()
-          img = BytesIO(w)
-          img.seek(0)
-          image = discord.File(img, filename='crit_failure')
-    return img
-
-async def failure_img():
-    async with aiohttp.ClientSession() as session:
-      async with session.get('https://i.imgur.com/ZlUJv2a.png') as w:
-          data = await w.read()
-          img = BytesIO(w)
-          img.seek(0)
-          image = discord.File(img, filename='failure')
-    return img
-
-async def normal_dice_img():
-    async with aiohttp.ClientSession() as session:
-      async with session.get('https://i.imgur.com/BJ3nNtA.png') as w:
-          data = await w.read()
-          img = BytesIO(w)
-          img.seek(0)
-          image = discord.File(img, filename='normal_dice')
-    return img
-
-async def crit_success_img():
-    async with aiohttp.ClientSession() as session:
-      async with session.get('https://i.imgur.com/KRO8zMD.png') as w:
-          data = await w.read()
-          img = BytesIO(w)
-          img.seek(0)
-          image = discord.File(img, filename='crit_success')
-    return img
-
 class IDiceBattle(commands.Cog):
 
     def __init__(self, bot):
@@ -94,68 +82,68 @@ class IDiceBattle(commands.Cog):
             "exp": 0,
             "bonus": 0
         }
-        default_guild = {
-            "config": False,
+        default_global = {
+            "config_done": False,
             "crit_failure": None,
             "failure": None,
             "normal_dice": None,
             "crit_success": None
         }
-        self.config.register_member(**default_profile)
-        self.config.register_guild(**default_guild)
+        self.config.register_user(**default_profile)
+        self.config.register_global(**default_global)
 
     async def exp_up(self, user):
-        exp = await self.config.member(user).exp()
-        lvl = await self.config.member(user).lvl()
-        bonus = await self.config.member(user).bonus()
+        exp = await self.config.user(user).exp()
+        lvl = await self.config.user(user).lvl()
+        bonus = await self.config.user(user).bonus()
         possible_futur_exp = (exp + 10)
         # exp_up + lvl_up
         if possible_futur_exp >= (10 * lvl):
             # lvl_up
-            await self.config.member(user).lvl.set(lvl + 1)
+            await self.config.user(user).lvl.set(lvl + 1)
             # reset exp
-            await self.config.member(user).exp.set(0)
+            await self.config.user(user).exp.set(0)
             # bonus_up
-            await self.config.member(user).bonus.set(bonus + 1)
+            await self.config.user(user).bonus.set(bonus + 1)
             return "ylvlup"
         # Normal exp_up
         else:
-            await self.config.member(user).exp.set(exp + 10)
+            await self.config.user(user).exp.set(exp + 10)
             return "nlvlup"
 
     async def exp_up_vs_bot(self, user):
-        exp = await self.config.member(user).exp()
-        lvl = await self.config.member(user).lvl()
-        bonus = await self.config.member(user).bonus()
+        exp = await self.config.user(user).exp()
+        lvl = await self.config.user(user).lvl()
+        bonus = await self.config.user(user).bonus()
         possible_futur_exp = (exp + 1)
         # exp_up + lvl_up
         if possible_futur_exp >= (10 * lvl):
             # lvl_up
-            await self.config.member(user).lvl.set(lvl + 1)
+            await self.config.user(user).lvl.set(lvl + 1)
             # reset exp
-            await self.config.member(user).exp.set(0)
+            await self.config.user(user).exp.set(0)
             # bonus_up
-            await self.config.member(user).bonus.set(bonus + 1)
+            await self.config.user(user).bonus.set(bonus + 1)
             return "ylvlup"
         # Normal exp_up
         else:
-            await self.config.member(user).exp.set(exp + 1)
+            await self.config.user(user).exp.set(exp + 1)
             return "nlvlup"
 
-    def dice_author(self, bonus_author):
-        return self.dice(bonus_user=bonus_author, dict_user="dice_author", dict_n_user="n_author")
+    def dice_author(self, bonus_author, crit_failure, failure, normal, crit_success):
+        return self.dice(crit_failure, failure, normal, crit_success, bonus_user=bonus_author, dict_user="dice_author", dict_n_user="n_author")
 
-    def dice_user(self, bonus_user):
-        return self.dice(bonus_user=bonus_user, dict_user="dice_user", dict_n_user="n_user")
+    def dice_user(self, bonus_user, crit_failure, failure, normal, crit_success):
+        return self.dice(crit_failure, failure, normal, crit_success, bonus_user=bonus_user, dict_user="dice_user", dict_n_user="n_user")
 
-    def dice_bot(self, bonus_author):
-        return self.dice(bonus_user=int(1.5 * bonus_author), dict_user="dice_bot", dict_n_user="n_bot")
+    def dice_bot(self, bonus_author, crit_failure, failure, normal, crit_success):
+        return self.dice(crit_failure, failure, normal, crit_success, bonus_user=int(1.5 * bonus_author), dict_user="dice_bot", dict_n_user="n_bot")
 
-    def dice(self, bonus_user, dict_user, dict_n_user):
-        crit_failure = self.bot.get_emoji(380852648213217290)
-        failure = self.bot.get_emoji(380852671273500683)
-        normal = self.bot.get_emoji(380852681364865034)
-        crit_success = self.bot.get_emoji(380852660259127297)
+    def dice(self, cf, fa, no, cs, bonus_user, dict_user, dict_n_user):
+        crit_failure = self.bot.get_emoji(cf)
+        failure = self.bot.get_emoji(fa)
+        normal = self.bot.get_emoji(no)
+        crit_success = self.bot.get_emoji(cs)
         n1_user = randint(1, 10)
         if n1_user == 10:  # Critical success
             n2_user = randint(1, 10)
@@ -190,18 +178,20 @@ class IDiceBattle(commands.Cog):
     @idiceset.command(name="emoji")
     @commands.guild_only()
     async def idiceset_emoji(self, ctx):
-        """Install the essentials emojis."""
+        """Install the essentials emojis.
+
+        You can create them in any of your server, as long as the bot is in it, it can use them."""
         author = ctx.author
         server = ctx.guild
         # Checking if this command has already been used
-        if not await self.config.guild(server):
+        if not await self.config.config_done():
             # Checking if there is enough emojis slot in the server
-            if not await enough_emojis(server):
+            if not enough_emojis(server):
                 # Not enough slot
                 await ctx.send("You don't have enough places available in your server's emojis.\n"
                                "The iDice Battle need 4 places available in your server's emojis.")
             else:  # Enough slot and asking if it's ok to create
-                msg = ctx.send("It will take 4 places available in your server's emojis. Is it ok ?")
+                msg = await ctx.send("It will take 4 places available in your server's emojis. Is it ok ?")
                 await msg.add_reaction('✅')
                 await msg.add_reaction('❌')
                 try:
@@ -211,32 +201,33 @@ class IDiceBattle(commands.Cog):
                     reaction, user = await self.bot.wait_for("reaction_add", timeout=30.0, check=check)
                     # Positive response
                     if reaction.emoji == '✅':
-                        await ctx.send("The configs have been initialized.")
+                        await ctx.send("The emojis have been created.")
                         # Creating emojis
                         await server.create_custom_emoji(name = "crit_failure", image = await crit_failure_img())
                         await server.create_custom_emoji(name = "failure", image = await failure_img())
                         await server.create_custom_emoji(name = "normal_dice", image = await normal_dice_img())
                         await server.create_custom_emoji(name = "crit_success", image = await crit_success_img())
+                        await asyncio.sleep(1) # Debugging for emojis.id
                         # Setting config to True and adding emojis.id
-                        await self.config.guild(server).config.set(True)
+                        await self.config.config_done.set(True)
                         for emoji in server.emojis:
                             if emoji.name == 'crit_failure':
-                                await self.config.guild(server).crit_failure.set(emoji.id)
+                                await self.config.crit_failure.set(emoji.id)
                             elif emoji.name == 'failure':
-                                await self.config.guild(server).failure.set(emoji.id)
+                                await self.config.failure.set(emoji.id)
                             elif emoji.name == 'normal_dice':
-                                await self.config.guild(server).normal_dice.set(emoji.id)
+                                await self.config.normal_dice.set(emoji.id)
                             elif emoji.name == 'crit_success':
-                                await self.config.guild(server).crit_success.set(emoji.id)
+                                await self.config.crit_success.set(emoji.id)
                     # Negative response
                     if reaction.emoji == '❌':
-                        await ctx.send("Ok then...\nThe configs steps are stopped.")
+                        await ctx.send("Ok then...\nI'm not gonna create the emojis.")
                 # No response
                 except asyncio.TimeoutError:
-                    await ctx.send("You didn't answer to me, the configs steps are stopped.")
+                    await ctx.send("You didn't answer to me, I've stopped creating the emojis.")
         # Command has already been used
         else:
-            await ctx.send("Have you forgotten? The configs have already been initialized.")
+            await ctx.send("Have you forgotten? The emojis have already been created.")
 
     @commands.group()
     @commands.guild_only()
@@ -254,9 +245,9 @@ class IDiceBattle(commands.Cog):
             data = discord.Embed(description="iDice Profile",
                                  color=author.color)
             data.set_author(name=author.display_name, icon_url=author.avatar_url)
-            data.add_field(name="Level 🏆", value=await self.config.member(author).lvl())
-            data.add_field(name="Experience ⭐", value=await self.config.member(author).exp())
-            data.add_field(name="Bonus", value=await self.config.member(author).bonus(), inline=False)
+            data.add_field(name="Level 🏆", value=await self.config.user(author).lvl())
+            data.add_field(name="Experience ⭐", value=await self.config.user(author).exp())
+            data.add_field(name="Bonus", value=await self.config.user(author).bonus(), inline=False)
             await ctx.message.delete()
             await ctx.send(embed=data)
         else:# No bot profile
@@ -267,107 +258,114 @@ class IDiceBattle(commands.Cog):
     async def idice_duel(self, ctx, user: discord.Member, amount: int):
         """To start an iDice duel."""
         author = ctx.author
+        crit_failure = await self.config.crit_failure()
+        failure = await self.config.failure()
+        normal_dice = await self.config.normal_dice()
+        crit_success = await self.config.crit_success()
         # No auto-duel
         if author == user:
             await ctx.send("{} : You can't duel yourself.".format(author.mention))
         # No bot duel
         elif user == self.bot.user:
-            await ctx.send("{} : Try to use `{}idice pve` instead.")
+            await ctx.send("{} : Try to use `{}idice pve` instead.".format(author.mention, ctx.prefix))
         else:
-            # Check account.can_spend() | positive response
-            if await bank.can_spend(author, amount) and await bank.can_spend(user, amount):
-                # Start w/ wait_for_reaction
-                await ctx.message.delete()
-                msg1 = await ctx.send("{}, do you want to confront {} in an iDice duel, for an amount of {}?"
-                                      "".format(user.mention, author.mention, amount))
-                await msg1.add_reaction('✅')
-                await msg1.add_reaction('❌')
-                try:
-                    def check(reaction, opponent):
-                        return opponent == user and (reaction.emoji == '✅' or reaction.emoji == '❌')
+            # Check if emojis are created
+            if await self.config.config_done():
+                # Check account.can_spend() | positive response
+                if await bank.can_spend(author, amount) and await bank.can_spend(user, amount):
+                    # Start w/ wait_for_reaction
+                    await ctx.message.delete()
+                    msg1 = await ctx.send("{}, do you want to confront {} in an iDice duel, for an amount of {}?"
+                                          "".format(user.mention, author.mention, amount))
+                    await msg1.add_reaction('✅')
+                    await msg1.add_reaction('❌')
+                    try:
+                        def check(reaction, opponent):
+                            return opponent == user and (reaction.emoji == '✅' or reaction.emoji == '❌')
 
-                    reaction, opponent = await self.bot.wait_for("reaction_add", timeout=30.0, check=check)
-                    # Positive response
-                    if reaction.emoji == '✅':
-                        author_bonus = await self.config.member(author).bonus()
-                        user_bonus = await self.config.member(user).bonus()
-                        dict_dice_author = self.dice_author(author_bonus)
-                        dice_author = dict_dice_author["dice_author"]
-                        n_author = dict_dice_author["n_author"]
-                        dict_dice_user = self.dice_user(user_bonus)
-                        dice_user = dict_dice_user["dice_user"]
-                        n_user = dict_dice_user["n_user"]
-                        # Results
-                        # Because of the fucking coroutines I can't return a fucking dict out of a coroutine function
-                        # So have fun and have a function in a command, having then an ugly 5billions lines command
-                        # Fuck you python
-                        if n_author != n_user:
-                            if n_author > n_user:
-                                # Winner
+                        reaction, opponent = await self.bot.wait_for("reaction_add", timeout=30.0, check=check)
+                        # Positive response
+                        if reaction.emoji == '✅':
+                            author_bonus = await self.config.user(author).bonus()
+                            user_bonus = await self.config.user(user).bonus()
+                            dict_dice_author = self.dice_author(author_bonus, crit_failure, failure, normal_dice, crit_success)
+                            dice_author = dict_dice_author["dice_author"]
+                            n_author = dict_dice_author["n_author"]
+                            dict_dice_user = self.dice_user(user_bonus, crit_failure, failure, normal_dice, crit_success)
+                            dice_user = dict_dice_user["dice_user"]
+                            n_user = dict_dice_user["n_user"]
+                            # Results
+                            # Because of the fucking coroutines I can't return a fucking dict out of a coroutine function
+                            # So have fun and have a function in a command, having then an ugly 5billions lines command
+                            # Fuck you python
+                            if n_author != n_user:
+                                if n_author > n_user:
+                                    # Winner
+                                    winner = author
+                                    n_winner = n_author
+                                    dice_winner = dice_author
+                                    # Loser
+                                    loser = user
+                                    n_loser = n_user
+                                    dice_loser = dice_user
+                                    # End
+                                else:
+                                    # Winner
+                                    winner = user
+                                    n_winner = n_user
+                                    dice_winner = dice_user
+                                    # Loser
+                                    loser = author
+                                    n_loser = n_author
+                                    dice_loser = dice_author
+                                # End
+                                msg = "{} won ! And wins the amount of {}.".format(winner.mention, amount)
+                                await bank.transfer_credits(loser, winner, amount)
+                                self_exp_up = await self.exp_up(winner)
+                            # Tie
+                            else:
                                 winner = author
                                 n_winner = n_author
                                 dice_winner = dice_author
-                                # Loser
                                 loser = user
                                 n_loser = n_user
                                 dice_loser = dice_user
-                                # End
-                            else:
-                                # Winner
-                                winner = user
-                                n_winner = n_user
-                                dice_winner = dice_user
-                                # Loser
-                                loser = author
-                                n_loser = n_author
-                                dice_loser = dice_author
-                            # End
-                            msg = "{} won ! And wins the amount of {}.".format(winner.mention, amount)
-                            await bank.transfer_credits(loser, winner, amount)
-                            self_exp_up = await self.exp_up(winner)
-                        # Tie
-                        else:
-                            winner = author
-                            n_winner = n_author
-                            dice_winner = dice_author
-                            loser = user
-                            n_loser = n_user
-                            dice_loser = dice_user
-                            msg = "{} & {} : Tie ! No one wins, no one loses.".format(author.mention, user.mention)
-                            self_exp_up = "nlvlup"
-                        # Viewing
-                        data = discord.Embed(
-                            description="iDice Duel <:normal_dice:380852681364865034> :crossed_swords:",
-                            color=author.color)
-                        data.add_field(name=winner.display_name,
-                                       value="{} {} {}".format(dice_winner, n_winner, dice_winner))
-                        data.add_field(name=loser.display_name,
-                                       value="{} {} {}".format(dice_loser, n_loser, dice_loser))
+                                msg = "{} & {} : Tie ! No one wins, no one loses.".format(author.mention, user.mention)
+                                self_exp_up = "nlvlup"
+                            # Viewing
+                            data = discord.Embed(
+                                description="iDice Duel <:normal_dice:{}> :crossed_swords:".format(normal_dice),
+                                color=author.color)
+                            data.add_field(name=winner.display_name,
+                                           value="{} {} {}".format(dice_winner, n_winner, dice_winner))
+                            data.add_field(name=loser.display_name,
+                                           value="{} {} {}".format(dice_loser, n_loser, dice_loser))
+                            await msg1.delete()
+                            await ctx.send(embed=data, content=msg)
+                            # Check if leveled up
+                            if self_exp_up == "ylvlup":
+                                lvl_winner = await self.config.user(winner).lvl()
+                                await ctx.send("{} has leveled up to {} ! Congrats !!!".format(winner.mention, lvl_winner))
+                        # Negative response
+                        if reaction.emoji == '❌':
+                            await msg1.delete()
+                            await ctx.send("{} : Your opponent have no balls to confront you.".format(author.mention))
+                    # No response
+                    except asyncio.TimeoutError:
                         await msg1.delete()
-                        await ctx.send(embed=data, content=msg)
-                        # Check if leveled up
-                        if self_exp_up == "ylvlup":
-                            lvl_winner = await self.config.member(winner).lvl()
-                            await ctx.send("{} has leveled up to {} ! Congrats !!!".format(winner.mention, lvl_winner))
-                    # Negative response
-                    if reaction.emoji == '❌':
-                        await msg1.delete()
-                        await ctx.send("{} : Your opponent have no balls to confront you.".format(author.mention))
-                # No response
-                except asyncio.TimeoutError:
-                    await msg1.delete()
-                    await ctx.send("{}: Your opponent didn't reply.".format(author.mention))
-            # author can't spend
-            elif not await bank.can_spend(author, amount):
-                await ctx.message.delete()
-                return await ctx.send("{}: You don't have enough in your bank account.\n"
-                                      "Unable to proceed to an iDice duel.".format(author.mention))
-            # user can't spend
-            elif not await bank.can_spend(user, amount):
-                await ctx.message.delete()
-                return await ctx.send("{}: Your opponent don't have enough in his/her bank account.\n"
-                                      "Unable to proceed to an iDice duel.".format(author.mention))
-
+                        await ctx.send("{}: Your opponent didn't reply.".format(author.mention))
+                # author can't spend
+                elif not await bank.can_spend(author, amount):
+                    await ctx.message.delete()
+                    return await ctx.send("{}: You don't have enough in your bank account.\n"
+                                          "Unable to proceed to an iDice duel.".format(author.mention))
+                # user can't spend
+                elif not await bank.can_spend(user, amount):
+                    await ctx.message.delete()
+                    return await ctx.send("{}: Your opponent don't have enough in his/her bank account.\n"
+                                          "Unable to proceed to an iDice duel.".format(author.mention))
+            else:
+                await ctx.send("You haven't created the emojis yet, do `{}idiceset emoji` for that.".format(ctx.prefix))
     # From here, 'Kaine' is a retard. He ask me to write down 'penis', so here it is : PENIS.
 
     @idice.command(name="pve")
@@ -376,64 +374,72 @@ class IDiceBattle(commands.Cog):
         """To start an iDice duel VS the bot."""
         author = ctx.author
         bot = self.bot.user
-        author_bonus = await self.config.member(author).bonus()
+        author_bonus = await self.config.user(author).bonus()
+        crit_failure = await self.config.crit_failure()
+        failure = await self.config.failure()
+        normal_dice = await self.config.normal_dice()
+        crit_success = await self.config.crit_success()
 
-        # Start
-        dict_dice_author = self.dice_author(author_bonus)
-        dice_author = dict_dice_author["dice_author"]
-        n_author = dict_dice_author["n_author"]
-        dict_dice_bot = self.dice_bot(author_bonus)
-        dice_bot = dict_dice_bot["dice_bot"]
-        n_bot = dict_dice_bot["n_bot"]
-        # Results
-        # Because of the fucking coroutines I can't return a fucking dict out of a coroutine function
-        # So have fun and have a function in a command, having then an ugly 5billions lines command
-        # Fuck you python
-        if n_author > n_bot:
-            # Winner
-            winner = author
-            n_winner = n_author
-            dice_winner = dice_author
-            # Loser
-            loser = bot
-            n_loser = n_bot
-            dice_loser = dice_bot
-            # End
-            msg = "{} won !".format(winner.mention)
-            self_exp_up = await self.exp_up_vs_bot(winner)
-        elif n_bot > n_author:
-            # Winner
-            winner = bot
-            n_winner = n_bot
-            dice_winner = dice_bot
-            # Loser
-            loser = author
-            n_loser = n_author
-            dice_loser = dice_author
-            # End
-            msg = "{} won !".format(winner.mention)
-            self_exp_up = "nlvlup"
-        # Tie
+        # Check if emojis are created
+        if await self.config.config_done():
+            # Start
+            dict_dice_author = self.dice_author(author_bonus, crit_failure, failure, normal_dice, crit_success)
+            dice_author = dict_dice_author["dice_author"]
+            n_author = dict_dice_author["n_author"]
+            dict_dice_bot = self.dice_bot(author_bonus, crit_failure, failure, normal_dice, crit_success)
+            dice_bot = dict_dice_bot["dice_bot"]
+            n_bot = dict_dice_bot["n_bot"]
+            # Results
+            # Because of the fucking coroutines I can't return a fucking dict out of a coroutine function
+            # So have fun and have a function in a command, having then an ugly 5billions lines command
+            # Fuck you python
+            if n_author > n_bot:
+                # Winner
+                winner = author
+                n_winner = n_author
+                dice_winner = dice_author
+                # Loser
+                loser = bot
+                n_loser = n_bot
+                dice_loser = dice_bot
+                # End
+                msg = "{} won !".format(winner.mention)
+                self_exp_up = await self.exp_up_vs_bot(winner)
+            elif n_bot > n_author:
+                # Winner
+                winner = bot
+                n_winner = n_bot
+                dice_winner = dice_bot
+                # Loser
+                loser = author
+                n_loser = n_author
+                dice_loser = dice_author
+                # End
+                msg = "{} won !".format(winner.mention)
+                self_exp_up = "nlvlup"
+            # Tie
+            else:
+                winner = author
+                n_winner = n_author
+                dice_winner = dice_author
+                loser = bot
+                n_loser = n_bot
+                dice_loser = dice_bot
+                msg = "{} & {} : Tie ! No one wins, no one loses.".format(author.mention, bot.mention)
+                self_exp_up = "nlvlup"
+            # Viewing
+            data = discord.Embed(description="iDice Duel <:normal_dice:{}> :crossed_swords:".format(normal_dice),
+                                 color=author.color)
+            data.add_field(name=winner.display_name, value="{} {} {}".format(dice_winner, n_winner, dice_winner))
+            data.add_field(name=loser.display_name, value="{} {} {}".format(dice_loser, n_loser, dice_loser))
+            await ctx.message.delete()
+            await ctx.send(embed=data, content=msg)
+            # Check if leveled up
+            if self_exp_up == "ylvlup":
+                lvl_winner = await self.config.user(winner).lvl()
+                await ctx.send("{} has leveled up to {} ! Congrats !!!".format(winner.mention, lvl_winner))
         else:
-            winner = author
-            n_winner = n_author
-            dice_winner = dice_author
-            loser = bot
-            n_loser = n_bot
-            dice_loser = dice_bot
-            msg = "{} & {} : Tie ! No one wins, no one loses.".format(author.mention, bot.mention)
-            self_exp_up = "nlvlup"
-        # Viewing
-        data = discord.Embed(description="iDice Duel <:normal_dice:380852681364865034> :crossed_swords:",
-                             color=author.color)
-        data.add_field(name=winner.display_name, value="{} {} {}".format(dice_winner, n_winner, dice_winner))
-        data.add_field(name=loser.display_name, value="{} {} {}".format(dice_loser, n_loser, dice_loser))
-        await ctx.message.delete()
-        await ctx.send(embed=data, content=msg)
-        # Check if leveled up
-        if self_exp_up == "ylvlup":
-            lvl_winner = await self.config.member(winner).lvl()
-            await ctx.send("{} has leveled up to {} ! Congrats !!!".format(winner.mention, lvl_winner))
+            await ctx.send("You haven't created the emojis yet, do `{}idiceset emoji` for that.".format(ctx.prefix))
 
     @idice.command(name="stats")
     @commands.guild_only()
@@ -450,8 +456,8 @@ class IDiceBattle(commands.Cog):
         img = BytesIO()
         if user == None:
             user = author
-        perso_lvl = await self.config.member(user).lvl()
-        perso_exp = await self.config.member(user).exp()
+        perso_lvl = await self.config.user(user).lvl()
+        perso_exp = await self.config.user(user).exp()
         # Calculating the sum of user exp for lim_axis or bar
         x2 = [perso_lvl + perso_exp / (perso_lvl * 10)]
 
@@ -567,30 +573,30 @@ class IDiceBattle(commands.Cog):
         - `[p]idice_setlvl @Aza' -9` - Decreases levels by 9
         """
         author = ctx.author
-        user_lvl = await self.config.member(user).lvl()
-        user_bonus = await self.config.member(user).bonus()
+        user_lvl = await self.config.user(user).lvl()
+        user_bonus = await self.config.user(user).bonus()
         # Adding level
         if lvls.operation == "deposit":
-            await self.config.member(user).lvl.set(user_lvl + lvls.sum)
-            await self.config.member(user).exp.set(0)
-            await self.config.member(user).bonus.set(user_bonus + lvls.sum)
+            await self.config.user(user).lvl.set(user_lvl + lvls.sum)
+            await self.config.user(user).exp.set(0)
+            await self.config.user(user).bonus.set(user_bonus + lvls.sum)
             msg = "`{}` added **{}** level(s) to `{}`.".format(author.display_name, lvls.sum, user.display_name)
         # Removing level
         elif lvls.operation == "withdraw":
             if (user_lvl - lvls.sum) < 1:
                 msg = "An user's level can't be below 1."
             else:
-                await self.config.member(user).lvl.set(user_lvl - lvls.sum)
-                await self.config.member(user).exp.set(0)
-                await self.config.member(user).bonus.set(user_bonus - lvls.sum)
+                await self.config.user(user).lvl.set(user_lvl - lvls.sum)
+                await self.config.user(user).exp.set(0)
+                await self.config.user(user).bonus.set(user_bonus - lvls.sum)
                 msg = "`{}` removed **{}** level(s) to `{}`.".format(author.display_name, lvls.sum, user.display_name)
         # Setting level
         elif lvls.operation == "set":
             if lvls.sum == 0:
                 msg = "An user's level can't be below 1."
             else:
-                await self.config.member(user).lvl.set(lvls.sum)
-                await self.config.member(user).exp.set(0)
-                await self.config.member(user).bonus.set(lvls.sum - 1)
+                await self.config.user(user).lvl.set(lvls.sum)
+                await self.config.user(user).exp.set(0)
+                await self.config.user(user).bonus.set(lvls.sum - 1)
                 msg = "`{}` set `{}`'s level(s) to **{}**.".format(author.display_name, user.display_name, lvls.sum)
         await ctx.send(msg)
