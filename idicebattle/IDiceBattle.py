@@ -21,23 +21,6 @@ normal_dice: https://i.imgur.com/BJ3nNtA.png
 crit_success: https://i.imgur.com/KRO8zMD.png
 '''
 
-class SetParser:
-    def __init__(self, argument):
-        allowed = ("+", "-")
-        self.sum = int(argument)
-        if argument and argument[0] in allowed:
-            if self.sum < 0:
-                self.operation = "withdraw"
-            elif self.sum > 0:
-                self.operation = "deposit"
-            else:
-                raise RuntimeError
-            self.sum = abs(self.sum)
-        elif argument.isdigit():
-            self.operation = "set"
-        else:
-            raise RuntimeError
-
 def enough_emojis(server):
     nbr_emoji = 0
     for emoji in server.emojis:
@@ -83,6 +66,23 @@ async def crit_success_img():
           img.seek(0)
           image = discord.File(img, filename='crit_success')
     return img
+
+class SetParser:
+    def __init__(self, argument):
+        allowed = ("+", "-")
+        self.sum = int(argument)
+        if argument and argument[0] in allowed:
+            if self.sum < 0:
+                self.operation = "withdraw"
+            elif self.sum > 0:
+                self.operation = "deposit"
+            else:
+                raise RuntimeError
+            self.sum = abs(self.sum)
+        elif argument.isdigit():
+            self.operation = "set"
+        else:
+            raise RuntimeError
 
 class IDiceBattle(commands.Cog):
 
