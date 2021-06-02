@@ -23,6 +23,3 @@ First release available: `5th September 2020`
   3. Run `[p]cog install Aza-Cogs idicebattle`
 ### Usage
 Simply do command `[p]help IDiceBattle` to see all the available commands and `[p]help idice <command_name>` to see more informations.
-## Contact
-* Discord : `Aza'#2804`
-* Also on the [Red Official Discord server](https://www.discord.gg/red)
