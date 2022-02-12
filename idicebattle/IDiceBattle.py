@@ -2,7 +2,6 @@
 # Idea developed by Aza' & Hitsumo
 # cog coding by Aza' & RissCrew
 # converted in V3 by Aza'
-# wanting to burn it all during the conversion by Aza'
 from redbot.core import commands, Config, bank, checks
 from random import randint
 from io import BytesIO
@@ -295,9 +294,6 @@ class IDiceBattle(commands.Cog):
                             dice_user = dict_dice_user["dice_user"]
                             n_user = dict_dice_user["n_user"]
                             # Results
-                            # Because of the fucking coroutines I can't return a fucking dict out of a coroutine function
-                            # So have fun and have a function in a command, having then an ugly 5billions lines command
-                            # Fuck you python
                             if n_author != n_user:
                                 if n_author > n_user:
                                     # Winner
@@ -366,7 +362,6 @@ class IDiceBattle(commands.Cog):
                                           "Unable to proceed to an iDice duel.".format(author.mention))
             else:
                 await ctx.send("You haven't created the emojis yet, do `{}idiceset emoji` for that.".format(ctx.prefix))
-    # From here, 'Kaine' is a retard. He ask me to write down 'penis', so here it is : PENIS.
 
     @idice.command(name="pve")
     @commands.guild_only()
@@ -390,9 +385,6 @@ class IDiceBattle(commands.Cog):
             dice_bot = dict_dice_bot["dice_bot"]
             n_bot = dict_dice_bot["n_bot"]
             # Results
-            # Because of the fucking coroutines I can't return a fucking dict out of a coroutine function
-            # So have fun and have a function in a command, having then an ugly 5billions lines command
-            # Fuck you python
             if n_author > n_bot:
                 # Winner
                 winner = author
@@ -554,10 +546,7 @@ class IDiceBattle(commands.Cog):
         # Viewing
         file_name = "{} IDice Stats - {}.png".format(user.name, type)
         img.seek(0)
-        # Historical comments under this:
-        # Maybe something with a discord.Embed or just uploading the image like a retard
         await ctx.send(file=discord.File(img, filename=file_name))
-        # Yes, I have done the retard way
 
     @idice.command(name="setlvl")
     @commands.guild_only()
