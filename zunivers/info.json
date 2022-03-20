@@ -1,0 +1,12 @@
+{
+  "author": ["MalikAza"],
+  "name": "zunivers",
+  "min_bot_version": "3.4.16",
+  "description": "Récupère différentes informations d'utilisateurs depuis https://zunivers.zerator.com/",
+  "hidden": false,
+  "install_msg": "Merci pour avoir installé le cog zunivers.\nTappez `[p]help zu` et `[p]help Zunivers` pour un aperçu rapide des commandes.",
+  "required_cogs": {},
+  "requirements": ["requests", "datetime", "aiohttp"],
+  "short": "Informations d'utilisateurs pour ZUnivers.",
+  "tags": ["fun", "zu", "zunivers", "zerator", "information", "api", "french", "français"]
+}
