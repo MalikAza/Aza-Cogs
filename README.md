@@ -1,4 +1,4 @@
-[![Red-DiscordBot](https://img.shields.io/badge/Red--DiscordBot-V3-red.svg)](https://github.com/Cog-Creators/Red-DiscordBot)
+[![Red-DiscordBot](https://img.shields.io/badge/Red--DiscordBot-V3-red.svg)](https://github.com/Cog-Creators/Red-DiscordBot) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/red-discordbot) ![GitHub last commit](https://img.shields.io/github/last-commit/MalikAza/Aza-Cogs)
 
 # IDiceBattle - Dice Multiplayer RPG
 IDiceBattle is a cog for [Red Discord Bot](https://github.com/Cog-Creators/Red-DiscordBot) that implements a complete multiplayer RPG of dices
