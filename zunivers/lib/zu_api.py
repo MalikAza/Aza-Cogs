@@ -1,114 +1,211 @@
 import requests
+import discord
+import urllib.parse
 from datetime import datetime, timedelta
 from .dtimestamp import DateTo
 
 base_url = "https://zunivers-api.zerator.com/public/"
+joueur_url = "https://zunivers.zerator.com/joueur/"
 full_date_format = "%Y-%m-%dT%H:%M:%S"
 discord_date_format = "%d/%m/%Y %H:%M"
 vortex_date_format = "%Y-%m-%d"
 
-def _get_player(url):
+def _get_datas(url):
     with requests.get(url) as r:
-        player_datas = r.json()
+        datas = r.json()
 
-    return player_datas
+    return datas
 
-def _get_challenge(url):
-    with requests.get(url) as r:
-        challenge_datas = r.json()
+class Insomniaque():
 
-    return challenge_datas
+    def __init__(self, user : discord.User):
+        full_user = urllib.parse.quote(str(user))
+        datas = _get_datas(f"{base_url}achievement/{full_user}/8e260bf0-f945-44b2-a9d9-92bf839ee917")
+        insomniaque = datas[2]
+        done = insomniaque["id"]
 
-class _User():
+        self.name = insomniaque["achievement"]["name"]
+        self.description = insomniaque["achievement"]["description"]
+        self.reward_score = insomniaque["achievement"]["score"]
+        if done:
+            self.done = True
+        else:
+            self.done = False
+            self.progress_done = []
+            self.progress_todo = []
 
-    def __init__(self, player_datas):
-        user_json = player_datas["user"]
+            for key, value in insomniaque["progress"]["items"].items():
+                if value:
+                    self.progress_done.append(key)
+                else:
+                    self.progress_todo.append(key)
 
-        self.name = user_json["discordUserName"]
-        self.position = user_json["position"]
-        self.score = user_json["score"]
-        self.monnaie = user_json["balance"]
-        self.poussiere = user_json["loreDust"]
-        self.cristal = user_json["loreFragment"]
-        self.rank = user_json["rank"]["name"]
-        banner = user_json["userBanner"]["banner"]
-        self.banner_name = banner["title"]
-        self.banner_url = banner["imageUrl"]
-        self.actif = user_json["isActive"]
+class _ReputationClan():
+    """attributs: name, level_name, progress"""
 
-class _ChallengeDatas():
+    def __init__(self, datas):
+        score = datas["value"]
+        level_max = datas["reputationLevel"]["toValue"] + 1
+
+        self.name = datas["reputation"]["name"]
+        self.level_name = datas["reputationLevel"]["name"]
+        self.progress = f"{score}/{level_max}"
+
+class _UserReputation():
+    """attributs: first, second, third, fourth, fifth"""
+
+    def __init__(self, datas):
+        reputation_json = datas["reputations"]
+
+        self.first = _ReputationClan(reputation_json[0])
+        self.second = _ReputationClan(reputation_json[1])
+        self.third = _ReputationClan(reputation_json[2])
+        self.fourth = _ReputationClan(reputation_json[3])
+        self.fifth = _ReputationClan(reputation_json[4])
+
+class _ChallengeAtrb():
+    """attributs: name, score_gain, powder_gain"""
 
     def __init__(self, datas):
         self.name = datas["challenge"]["description"]
-        self.score = datas["challenge"]["score"]
-        self.poussiere = datas["challenge"]["rewardLoreDust"]
-        self.progress = f'{datas["progress"]["current"]}/{datas["progress"]["max"]}'
+        self.score_gain = datas["challenge"]["score"]
+        self.powder_gain = datas["challenge"]["rewardLoreDust"]
+
+class _UserChallengeAtrb():
+    """attributs: name, score_gain, powder_gain, progress, achieved_date"""
+    
+    def __init__(self, datas):
         achieved = datas["challengeLog"]
-        if achieved == None:
+
+        self.name = datas["challenge"]["description"]
+        self.score_gain = datas["challenge"]["score"]
+        self.powder_gain = datas["challenge"]["rewardLoreDust"]
+        self.progress = f'{datas["progress"]["current"]}/{datas["progress"]["max"]}'
+        if not achieved:
             self.achieved_date = None
         else:
             self.achieved_date = DateTo(datetime.strptime(achieved["date"], full_date_format).strftime(discord_date_format)).longdate
 
+class Challenges():
+    """attributs: first, second, third, begin_date, end_date"""
 
-class _Challenge():
-
-    def __init__(self, challenge_datas):
-        self.first = _ChallengeDatas(challenge_datas[0])
-        self.second = _ChallengeDatas(challenge_datas[1])
-        self.third = _ChallengeDatas(challenge_datas[2])
+    def __init__(self, user : discord.User = None):
+        full_user = urllib.parse.quote(str(user))
+        datas = _get_datas(base_url + "challenge" + (f"/{full_user}" if user else ""))
+        
+        self.first = _ChallengeAtrb(datas[0])
+        self.second = _ChallengeAtrb(datas[1])
+        self.third = _ChallengeAtrb(datas[2])
+        if user:
+            self.first = _UserChallengeAtrb(datas[0])
+            self.second = _UserChallengeAtrb(datas[1])
+            self.third = _UserChallengeAtrb(datas[2])
         # dates
-        self.begin_date = DateTo(datetime.strptime(challenge_datas[0]["beginDate"], full_date_format).strftime(discord_date_format)).short_d
-        self.end_date = DateTo(datetime.strptime(challenge_datas[0]["endDate"], full_date_format).strftime(discord_date_format)).short_d
+        self.begin_date = DateTo(datetime.strptime(datas[0]["beginDate"], full_date_format).strftime(discord_date_format)).short_d
+        self.end_date = DateTo(datetime.strptime(datas[0]["endDate"], full_date_format).strftime(discord_date_format)).short_d
 
-class ZUniversProfile():
+class Event:
+    """attributs: got_events, names, pack_names, monney_costs, dust_costs, is_onetimes, begin_dates, end_dates, actives"""
 
-    def __init__(self, username, discri):
-    # /jouer/username#discri datas
-        self.player_url = f"{base_url}user/{username}%23{discri}"
+    def __init__(self):
+        datas = _get_datas(base_url + "event")
 
-        player_datas = _get_player(self.player_url)
-        self.user = _User(player_datas)
-
-        self.cards_nbrs = player_datas["inventoryCount"]
-        # unique cards
-        cards_nbrs_in_bdd = str(player_datas["itemCount"])
-        self.unique_cards = f'{str(player_datas["inventoryUniqueCount"])}/{cards_nbrs_in_bdd}'
-        self.unique_gold_cards = f'{str(player_datas["inventoryUniqueGoldenCount"])}/{cards_nbrs_in_bdd}'
-
-        self.lr_nbrs = player_datas["luckyCount"]
-        # achievments
-        achievements_nbrs_in_bdd = str(player_datas["achievementCount"])
-        self.achievements = f'{str(player_datas["achievementLogCount"])}/{achievements_nbrs_in_bdd}'
-        # tradeless
-        trades = player_datas["tradeCount"]
-        if trades == 0:
-            self.tradeless = ", Sans échange"
+        if datas != []:
+            self.got_events = True
+            self.names = []
+            self.pack_names = []
+            self.monney_costs = []
+            self.dust_costs = []
+            self.is_onetimes = []
+            self.begin_dates = []
+            self.end_dates = []
+            self.actives = []
+            for i in range(len(datas)):
+                self.names.append(datas[i]["name"])
+                self.pack_names.append(datas[i]["pack"]["name"])
+                self.monney_costs.append(datas[i]["balanceCost"])
+                self.dust_costs.append(datas[i]["loreDustCost"])
+                self.is_onetimes.append(datas[i]["isOneTime"])
+                self.begin_dates.append(DateTo(datetime.strptime(datas[i]["beginDate"], full_date_format).strftime(discord_date_format)).longdate)
+                self.end_dates.append(DateTo(datetime.strptime(datas[i]["endDate"], full_date_format).strftime(discord_date_format)).longdate)
+                self.actives.append(datas[i]["isActive"])
         else:
-            self.tradeless = ""
-        # subscription
-        subscription = player_datas["subscription"]
-        self.subscription_begin = DateTo(datetime.strptime(subscription["beginDate"], full_date_format).strftime(discord_date_format)).longdate
-        self.subscription_begin_since = DateTo(datetime.strptime(subscription["beginDate"], full_date_format).strftime(discord_date_format)).relative
-        self.subscription_end = DateTo(datetime.strptime(subscription["endDate"], full_date_format).strftime(discord_date_format)).short_d
-        self.subscription_end_to = DateTo(datetime.strptime(subscription["endDate"], full_date_format).strftime(discord_date_format)).relative
-        # pity
-        days_before_pity = int(str(player_datas["invokeBeforePity"])[:-1])
+            self.got_events = False
+
+class Vortex:
+    """attributs: name, pack, reputation, begin_date, end_date"""
+
+    def __init__(self):
+        datas_season = _get_datas(f"{base_url}tower/season")
+        datas_stats = _get_datas(f"{base_url}tower/stats")
+
+        self.name = datas_season["tower"]["name"]
+        self.pack = datas_season["tower"]["pack"]["name"]
+        self.reputation = datas_season["tower"]["reputation"]["name"]
+        self.begin_date = DateTo(datetime.strptime(datas_season["beginDate"], vortex_date_format).strftime(discord_date_format)).short_d
+        self.end_date = DateTo(datetime.strptime(datas_season["endDate"], vortex_date_format).strftime(discord_date_format)).short_d
+
+class User():
+    """arg: discord.User object"""
+
+    def __init__(self, username : discord.User):
+        full_user = urllib.parse.quote(str(username))
+    ### datas ###
+        user_datas = _get_datas(f"{base_url}user/{full_user}")
+        challenge_datas = _get_datas(f"{base_url}challenge/{full_user}")
+        reputation_datas = _get_datas(f"{base_url}tower/{full_user}")
+        activity_datas = _get_datas(f"{base_url}user/{full_user}/activity")
+    ### miscellaneous indexes ###
+        user = user_datas["user"]
+        total_card_numbers = str(user_datas["itemCount"])
+        total_achievement_numbers = str(user_datas["achievementCount"])
+        trades = user_datas["tradeCount"]
+        subscription = user_datas["subscription"]
+        days_before_pity = int(str(user_datas["invokeBeforePity"])[:-1])
+        vortex_stats = user_datas["towerStat"]
+        last_loot_count = activity_datas["lootInfos"][364]["count"]
+    ### attributes ###
+        self.url = f"{joueur_url}{full_user}"
+        self.name = user["discordUserName"]
+        self.position = user["position"]
+        self.score = user["score"]
+        self.monnaie = user["balance"]
+        self.powder = user["loreDust"]
+        self.crystal = user["loreFragment"]
+        self.rank = user["rank"]["name"]
+        self.active = user["isActive"]
+
+        self.card_numbers = user_datas["inventoryCount"]
+        self.unique_cards = f'{str(user_datas["inventoryUniqueCount"])}/{total_card_numbers}'
+        self.unique_gold_cards = f'{str(user_datas["inventoryUniqueGoldenCount"])}/{total_card_numbers}'
+        self.lucky_numbers = user_datas["luckyCount"]
+        self.achievement_numbers = f'{str(user_datas["achievementLogCount"])}/{total_achievement_numbers}'
+        if trades == 0:
+            self.tradeless = True
+        else:
+            self.tradeless = False
+        if subscription:
+            self.is_subscribed = True
+            self.subscription_begin = DateTo(datetime.strptime(subscription["beginDate"], full_date_format).strftime(discord_date_format)).longdate
+            self.subscription_begin_since = DateTo(datetime.strptime(subscription["beginDate"], full_date_format).strftime(discord_date_format)).relative
+            self.subscription_end = DateTo(datetime.strptime(subscription["endDate"], full_date_format).strftime(discord_date_format)).short_d
+            self.subscription_end_to = DateTo(datetime.strptime(subscription["endDate"], full_date_format).strftime(discord_date_format)).relative
+        else:
+            self.is_subscribed = False
         self.pity_in = DateTo((datetime.now() + timedelta(days=days_before_pity)).strftime(discord_date_format)).relative
-        # vortex stats
-        vortex_stats = player_datas["towerStat"]
-        if vortex_stats["maxFloorIndex"] != None:
-            self.vortex_stade = vortex_stats["maxFloorIndex"] + 1
+        if vortex_stats:
+            if vortex_stats["maxFloorIndex"]:
+                self.vortex_stade = vortex_stats["maxFloorIndex"] + 1
+            else:
+                self.vortex_stade = 0
+            self.vortex_trys = vortex_stats["towerLogCount"]
         else:
             self.vortex_stade = 0
-        self.vortex_trys = vortex_stats["towerLogCount"]
-        self.vortex_begin_date = DateTo(datetime.strptime(vortex_stats["towerSeasonBeginDate"], vortex_date_format).strftime(discord_date_format)).short_d
-        self.vortex_end_date = DateTo(datetime.strptime(vortex_stats["towerSeasonEndDate"], vortex_date_format).strftime(discord_date_format)).short_d
-        self.vortex_name = vortex_stats["towerName"]
-    # /challenge/username#discri datas
-        challenge_url = f"{base_url}challenge/{username}%23{discri}"
-        challenge_datas = _get_challenge(challenge_url)
-        self.challenge = _Challenge(challenge_datas)
-
-
-# a = ZUniversProfile("Aza'", "0428")
-# print(a)
+            self.vortex_trys = 0
+        ### sub-classes ###
+        self.challenge = Challenges(username)
+        self.reputation = _UserReputation(reputation_datas)
+        if last_loot_count == 0:
+            self.journa = False
+        else:
+            self.journa = True
