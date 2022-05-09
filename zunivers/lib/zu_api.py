@@ -67,6 +67,8 @@ class _ChallengeAtrb():
     """attributs: name, score_gain, powder_gain"""
 
     def __init__(self, datas):
+        achieved = datas["challengeLog"]
+
         self.name = datas["challenge"]["description"]
         self.score_gain = datas["challenge"]["score"]
         self.powder_gain = datas["challenge"]["rewardLoreDust"]
