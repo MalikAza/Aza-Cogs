@@ -107,7 +107,7 @@ class Zunivers(commands.Cog):
             profile.tradeless = ""
         data = discord.Embed(description=f"{profile.rank}{profile.tradeless}", color=user.color)
         data.set_author(name=f"{user} {active_emoji}", icon_url=avat_url, url=profile.url)
-        data.set_footer(text=f"#{profile.position} : {profile.score} points", icon_url=zu_logo)
+        data.set_footer(text=f"#{profile.position} : {profile.score} points | Succès : {profile.score_achievement} points", icon_url=zu_logo)
         data.add_field(name=monnaie, value=profile.monnaie)
         data.add_field(name=poudre, value=profile.powder)
         data.add_field(name=cristal, value=profile.crystal)
