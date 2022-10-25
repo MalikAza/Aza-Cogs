@@ -107,14 +107,14 @@ class Zunivers(commands.Cog):
             profile.tradeless = ""
         data = discord.Embed(description=f"{profile.rank}{profile.tradeless}", color=user.color)
         data.set_author(name=f"{user} {active_emoji}", icon_url=avat_url, url=profile.url)
-        data.set_footer(text=f"#{profile.position} : {profile.score} points | Succès : {profile.score_achievement} points", icon_url=zu_logo)
+        data.set_footer(text=f"#{profile.leaderboards.globals.position} : {profile.leaderboards.globals.score} points | Succès : {profile.leaderboards.achievement.score} points", icon_url=zu_logo)
         data.add_field(name=monnaie, value=profile.monnaie)
         data.add_field(name=poudre, value=profile.powder)
         data.add_field(name=cristal, value=profile.crystal)
         data.add_field(name="Cartes uniques", value=profile.unique_cards)
         data.add_field(name=f"{self.gold_emoji} Cartes dorées uniques", value=profile.unique_gold_cards)
         data.add_field(name="Cartes", value=profile.card_numbers)
-        data.add_field(name="Lucky Rayou grattés", value=profile.lucky_numbers)
+        data.add_field(name="Tickets grattés", value=profile.ticket_numbers)
         data.add_field(name="Succès", value=profile.achievement_numbers)
         data.add_field(name=f"{rayou4} Pity", value=profile.pity_in)
         data.add_field(name="!journa", value=journa_emoji)
@@ -242,6 +242,37 @@ class Zunivers(commands.Cog):
 
         return pages
 
+    async def leaderboards(self, user, avat_url, profile):
+        zu_logo, poudre, monnaie, cristal, rayou4 = await self.get_zu_emojis()
+        active_emoji = self.activity_emoji(profile.active)
+        data = discord.Embed(description="Personnal Leaderboards", color=user.color)
+        data.set_author(name=f"{user} {active_emoji}", url=profile.url, icon_url=avat_url)
+        data.set_footer(icon_url=zu_logo)
+        data.add_field(name="Global",
+        value=f"#{profile.leaderboards.globals.position} : {profile.leaderboards.globals.score} points", inline=False)
+        data.add_field(name="Succès",
+        value=f"#{profile.leaderboards.achievement.position} : {profile.leaderboards.achievement.score} points", inline=False)
+        data.add_field(name="Défis",
+        value=f"#{profile.leaderboards.challenge.position} : {profile.leaderboards.challenge.score} points", inline=False)
+        data.add_field(name="Inventaire",
+        value=f"#{profile.leaderboards.inventory.position} : {profile.leaderboards.inventory.score} points", inline=False)
+        data.add_field(name="Inventaire unique (dorée + normal)",
+        value=f"#{profile.leaderboards.inventory_unique.position} : {profile.leaderboards.inventory_unique.score} points", inline=False)
+        data.add_field(name="Inventaire dorée unique",
+        value=f"#{profile.leaderboards.inventory_unique_golden.position} : {profile.leaderboards.inventory_unique_golden.score} points", inline=False)
+        data.add_field(name="Inventaire unique normal",
+        value=f"#{profile.leaderboards.inventory_unique_normal.position} : {profile.leaderboards.inventory_unique_normal.score} points", inline=False)
+        data.add_field(name="Réputation",
+        value=f"#{profile.leaderboards.reputation.position} : {profile.leaderboards.reputation.score} points", inline=False)
+        if profile.leaderboards.tradeless:
+            data.add_field(name="Sans échange",
+            value=f"#{profile.leaderboards.tradeless.position} : {profile.leaderboards.tradeless.score} points", inline=False)
+        if profile.leaderboards.constellations:
+            data.add_field(name="Constellations",
+            value=f"#{profile.leaderboards.constellations.position} : {profile.leaderboards.constellations.score} points", inline=False)
+
+        return data
+
     async def profile_embed(self, user, avat_url, profile):
         pages = []
         pages.append( await self.profile_base(user, avat_url, profile))
@@ -251,6 +282,7 @@ class Zunivers(commands.Cog):
         defis = await self.defis_embed(user, avat_url, profile)
         for i in defis:
             pages.append(i)
+        pages.append( await self.leaderboards(user, avat_url, profile))
 
         return pages
 
@@ -339,7 +371,7 @@ class Zunivers(commands.Cog):
             else:
                 avat_url = str(user.avatar_url_as(static_format="png"))
 
-            profile = User(user)
+            profile = User(user, True, True, True, True)
             data = await self.profile_embed(user, avat_url, profile)
 
             await menu(ctx, data, DEFAULT_CONTROLS)
@@ -365,7 +397,7 @@ class Zunivers(commands.Cog):
             else:
                 avat_url = str(user.avatar_url_as(static_format="png"))
 
-            profile = User(user)
+            profile = User(user, challenge=True)
             data = await self.defis_embed(user, avat_url, profile)
 
             await menu(ctx, data, DEFAULT_CONTROLS)
@@ -417,8 +449,34 @@ class Zunivers(commands.Cog):
             else:
                 avat_url = str(user.avatar_url_as(static_format="png"))
 
-            profile = User(user)
+            profile = User(user, pity_andor_vortex=True)
             data = await self.vortex(user, avat_url, profile)
+
+            await ctx.send(embed=data)
+        else:
+            await ctx.reply(f"Tu n'as pas encore créé les emojis, tappe `{ctx.prefix}zuset emoji` pour cela.")
+
+    @zu.command(name="reputation", aliases=['reput'])
+    async def zu_reputation(self, ctx, user : discord.User = None):
+        """Les différentes réputation de l'utilisateur."""
+        if await self.config.config_done():
+            author = ctx.author
+            server = ctx.guild
+            if user == None:
+                user = author
+            else:
+                try:
+                    user = await server.fetch_member(user.id)
+                except:
+                    pass
+
+            if user.is_avatar_animated():
+                avat_url = str(user.avatar_url_as(format="gif"))
+            else:
+                avat_url = str(user.avatar_url_as(static_format="png"))
+
+            profile = User(user, reputation=True)
+            data = await self.reputation(user, avat_url, profile)
 
             await ctx.send(embed=data)
         else:
@@ -483,5 +541,31 @@ class Zunivers(commands.Cog):
             else:
                 embeds = await self.events(event_datas)
                 await menu(ctx, embeds, DEFAULT_CONTROLS)
+        else:
+            await ctx.reply(f"Tu n'as pas encore créé les emojis, tappe `{ctx.prefix}zuset emoji` pour cela.")
+
+    @zu.command(name="leaderboards", aliases=['lb'])
+    async def zu_leaderboards(self, ctx, user : discord.User = None):
+        """Les différents leaderboards de l'utilisateur."""
+        if await self.config.config_done():
+            author = ctx.author
+            server = ctx.guild
+            if user == None:
+                user = author
+            else:
+                try:
+                    user = await server.fetch_member(user.id)
+                except:
+                    pass
+
+            if user.is_avatar_animated():
+                avat_url = str(user.avatar_url_as(format="gif"))
+            else:
+                avat_url = str(user.avatar_url_as(static_format="png"))
+
+            profile = User(user)
+            data = await self.leaderboards(user, avat_url, profile)
+
+            await ctx.send(embed=data)
         else:
             await ctx.reply(f"Tu n'as pas encore créé les emojis, tappe `{ctx.prefix}zuset emoji` pour cela.")
